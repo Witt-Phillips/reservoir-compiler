@@ -1,5 +1,6 @@
 import numpy as np
 import sympy as sp
+from scipy.sparse import issparse
 from scipy.linalg import inv
 import math
 
@@ -21,6 +22,11 @@ class Reservoir:
         self.B = B
         self.r_init = r_init
         self.x_init = x_init
+
+        # Convert sparse matrices to dense format if needed
+        A_dense = A.toarray() if issparse(A) else A
+        B_dense = B.toarray() if issparse(B) else B
+
         self.d = np.arctanh(r_init) - np.dot(A, r_init) - np.dot(B, x_init)  # calculate bias s.t. r is fixed at x_init
         self.r = np.zeros(A.shape[0])  # r: n x 1
         self.global_timescale = global_timescale
@@ -117,16 +123,6 @@ class Reservoir:
         return Pd1, C1, C2, C3a, C3b, C4a, C4b, C4c
 
 def tanh_deriv(d, order):
-    """
-    Compute the derivatives of the tanh function up to the specified order.
-    
-    Parameters:
-    d (numpy.ndarray): Vector of input values.
-    order (int): Order of derivatives to compute.
-    
-    Returns:
-    numpy.ndarray: Matrix of derivatives evaluated at input values.
-    """
     z = sp.symbols('z')
     tanh_z = sp.tanh(z)
     derivatives = [tanh_z]
