@@ -4,19 +4,15 @@ import seaborn as sns
 import numpy as np
 
 def plt_r_evolution(reservoir: Reservoir, num_steps: int):
-    # Store the initial state
     states = [reservoir.r.copy()]
 
-    # Run the reservoir forward multiple time steps with random inputs
     for _ in range(num_steps):
-        x = np.random.randn(k)
+        x = np.random.randn(len(reservoir.x_init))
         r = reservoir.propagate(x)
         states.append(r.copy())
     
-    # Convert states to a NumPy array for easier slicing
     states = np.array(states)
     
-    # Plot the evolution of the first few components of r
     plt.figure(figsize=(12, 8))
     for i in range(min(10, states.shape[1])):  # Plot the first 10 components or fewer if less than 10
         plt.plot(states[:, i], label=f'r[{i}]')
@@ -26,7 +22,7 @@ def plt_r_evolution(reservoir: Reservoir, num_steps: int):
     plt.legend()
     plt.show()
 
-def plt_decomposition(C1, C2, C3a, C3b, C4a, C4b, C4c):
+def plt_decompilation(C1, C2, C3a, C3b, C4a, C4b, C4c):
     fig, axes = plt.subplots(3, 3, figsize=(18, 15))
 
     sns.heatmap(C1, annot=True, cmap="viridis", ax=axes[0, 0])
@@ -54,7 +50,8 @@ def plt_decomposition(C1, C2, C3a, C3b, C4a, C4b, C4c):
     plt.show()
 
 def plt_rsnpl1(RsNPL1, title="RsNPL1"):
-    plt.figure(figsize=(10, 8))
-    sns.heatmap(RsNPL1, annot=True, cmap="viridis")
+    nrows, ncols = RsNPL1.shape
+    plt.figure(figsize=(max(10, ncols / 2), max(8, nrows / 2)))
+    sns.heatmap(RsNPL1, annot=False, cmap="viridis")
     plt.title(title)
     plt.show()
