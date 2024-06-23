@@ -6,12 +6,13 @@ from reservoir import Reservoir
 # Taylor Series approximation of reservoir machine code to 'order.' Returns R (coefs), s (symbolic bases)
 def decompile(self: Reservoir, order, verbose=False):
     if verbose:
+        np.set_printoptions(precision=2)
         print("Decompiling reservoir...")
         self.print()
 
     # 0th order T-series
     R = np.tanh(self.d)[:, None]
-    s = np.array([2])[:, None]
+    s = np.array([1])[:, None]
     
     # init input symbols
     sym_names = [f'x{i+1}' for i in range(len(self.x_init))] # names bases based on x*
@@ -24,27 +25,52 @@ def decompile(self: Reservoir, order, verbose=False):
     if verbose:
         print("Generated tanh derivatives: ", tanh_derivs)
 
+    # calculates each order of the Taylor series, appends to R,s
     for o in range(1, order + 1):
         # calculate prefactor
         pre = 1 / sp.factorial(o)
+        if verbose and o == 1:
+            print("Calculated prefactor: ", pre)
 
         #generate symbolic bases as sympy array
         bases_arr = gen_bases(self.x_init, order) # tuples of symbol combinations
         s = np.concatenate((s, np.array([sp.Mul(*combination) for combination in bases_arr])[:, None]), axis=0)
 
         # Find B-coefs for each state function and append to R
+        R_section = np.empty((0, len(bases_arr)))
         for n in range(0, len(self.r_init)):
             # create equation, where n = r_n. dtanh(Bn1x1 + ... + Bnkxk + d_n)
-            equation = tanh_derivs[o].subs('x', sum(weight * base for weight, base in zip(self.B[n], x_syms)) + self.d[n])
-            #print(equation)
+            base_equation = tanh_derivs[o].subs('x', sum(weight * base for weight, base in zip(self.B[n], x_syms)) + self.d[n])
+            if verbose and o == 1:
+                print("Base equation for neuron", n, "is", base_equation)
 			
-            # TODO: pickup here
+            # calculate taylor series for each base combination
+            tseries = sp.S(0) 
+            for base_combo in bases_arr:
+                tseries_component = sp.S(1) 
+                for base in base_combo:
+                    idx = int(base.name[1]) - 1 # Extract the index from the sympy symbol. Bit clunky.
+                    tseries_component *= base * self.B[n][idx]
+                evaled_base_equation = base_equation.subs([(x_syms[i], self.x_init[i]) for i in range(len(self.x_init))])
+                tseries += tseries_component * evaled_base_equation / pre
+            
+            # Decompose tseries into R, s
+            coefficients = []
+            for term in tseries.as_ordered_terms():
+                # Extract coefficient and symbol from each term
+                coeff, _ = term.as_coeff_Mul()
+                coefficients.append(float(coeff))
+            coefficients = np.array(coefficients)[None, :]
+            R_section = np.vstack((R_section, coefficients))
+            print("R section", R_section)
+            print("printing tseries:\n", tseries)
+        R = np.hstack((R, R_section))
+
 
     if verbose:
         print("Decompile complete.")
         print("R: ", R)
         print("s: ", s)
-
     return R, s
 
 
@@ -52,7 +78,7 @@ def decompile(self: Reservoir, order, verbose=False):
 Reservoir.decompile = decompile
 
 # given input vector x and order, returns array of all possible base combinations as arrays of sympy symbols
-# gen_bases([1, 2, 3], 2) => [(x1, x1), (x1, x2), (x1, x3), (x2, x1), (x2, x2), (x2, x3), (x3, x1), (x3, x2), (x3, x3)]
+# ex. gen_bases([1, 2, 3], 2) => [(x1, x1), (x1, x2), (x1, x3), (x2, x1), (x2, x2), (x2, x3), (x3, x1), (x3, x2), (x3, x3)]
 def gen_bases(x, order):
     var_names = [f'x{i+1}' for i in range(len(x))]
     sp_vars = sp.symbols(var_names)
@@ -61,7 +87,7 @@ def gen_bases(x, order):
 
 
 # return the first n derivatives of tanh (array of sympy functions)
-# tanh_derivs(2) => [tanh(x), cosh(x)**(-2), -2*tanh(x)/cosh(x)**2]
+# ex. tanh_derivs(2) => [tanh(x), cosh(x)**(-2), -2*tanh(x)/cosh(x)**2]
 def gen_tanh_derivs(n):
     x = sp.symbols('x')
     tanh_x = sp.tanh(x)

@@ -14,17 +14,10 @@ Reservoir Structure:
 """
 class Reservoir:
     def __init__(self, A=None, B=None, r_init=None, x_init=None,
-                global_timescale: float=1, local_timescale: float=1,
-                initialization="default"):
-        self.A = A
-        self.B = B
-        self.r_init = r_init
-        self.x_init = x_init
-
+                global_timescale: float=1, local_timescale: float=1):
+        self.__dict__.update(A=A, B=B, r_init=r_init, x_init=x_init, global_timescale=global_timescale, local_timescale=local_timescale)
         self.d = np.arctanh(self.r_init) - self.A @ self.r_init - np.dot(self.B, self.x_init)  # calculate bias s.t. r is fixed at x_init
         self.r = np.zeros(self.A.shape[0])  # r: n x 1
-        self.global_timescale = global_timescale
-        self.local_timescale = local_timescale
 
     # approximate the diff eq describing r evolution in continuous time via RK4 integration
     # Input: x at current timestep
