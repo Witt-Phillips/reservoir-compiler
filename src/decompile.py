@@ -6,7 +6,6 @@ from reservoir import Reservoir
 # Taylor Series approximation of reservoir machine code to 'order.' Returns R (coefs), s (symbolic bases)
 def decompile(self: Reservoir, order, verbose=False):
     if verbose:
-        np.set_printoptions(precision=2)
         print("Decompiling reservoir...")
         self.print()
 
@@ -18,19 +17,19 @@ def decompile(self: Reservoir, order, verbose=False):
     sym_names = [f'x{i+1}' for i in range(len(self.x_init))] # names bases based on x*
     x_syms = sp.symbols(sym_names)
     if verbose:
-        print("Generated input symbols: ", x_syms)
+        print("Input symbols: ", x_syms)
     
     # generate necessary tanh derivatives
     tanh_derivs = gen_tanh_derivs(order)
     if verbose:
-        print("Generated tanh derivatives: ", tanh_derivs)
+        print("Tanh derivatives: ", tanh_derivs)
 
     # calculates each order of the Taylor series, appends to R,s
     for o in range(1, order + 1):
-        # calculate prefactor
+        # find prefactor
         pre = 1 / sp.factorial(o)
         if verbose and o == 1:
-            print("Calculated prefactor: ", pre)
+            print("Prefactor: ", pre)
 
         #generate symbolic bases as sympy array
         bases_arr = gen_bases(self.x_init, order) # tuples of symbol combinations
@@ -41,8 +40,8 @@ def decompile(self: Reservoir, order, verbose=False):
         for n in range(0, len(self.r_init)):
             # create equation, where n = r_n. dtanh(Bn1x1 + ... + Bnkxk + d_n)
             base_equation = tanh_derivs[o].subs('x', sum(weight * base for weight, base in zip(self.B[n], x_syms)) + self.d[n])
-            if verbose and o == 1:
-                print("Base equation for neuron", n, "is", base_equation)
+            if verbose and o == 1 and n == 0:
+                print("Base equation for neuron", n, ": ", base_equation)
 			
             # calculate taylor series for each base combination
             tseries = sp.S(0) 
@@ -62,8 +61,11 @@ def decompile(self: Reservoir, order, verbose=False):
                 coefficients.append(float(coeff))
             coefficients = np.array(coefficients)[None, :]
             R_section = np.vstack((R_section, coefficients))
-            print("R section", R_section)
-            print("printing tseries:\n", tseries)
+            
+            if verbose and o == 1 and n == 0:
+                print("R section", R_section)
+                print("Tseries for neuron", n, ": ", tseries)
+
         R = np.hstack((R, R_section))
 
 
@@ -72,8 +74,6 @@ def decompile(self: Reservoir, order, verbose=False):
         print("R: ", R)
         print("s: ", s)
     return R, s
-
-
 
 Reservoir.decompile = decompile
 
@@ -97,4 +97,3 @@ def gen_tanh_derivs(n):
         derivatives.append(sp.diff(derivatives[-1], x))
 
     return [sp.simplify(d) for d in derivatives]
-
