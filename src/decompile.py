@@ -26,13 +26,15 @@ def decompile(self: Reservoir, order, verbose=False):
 
     # calculates each order of the Taylor series, appends to R,s
     for o in range(1, order + 1):
+        if verbose:
+            print("----- ORDER", o, "------")
         # find prefactor
         pre = 1 / sp.factorial(o)
-        if verbose and o == 1:
+        if verbose:
             print("Prefactor: ", pre)
 
         #generate symbolic bases as sympy array
-        bases_arr = gen_bases(self.x_init, order) # tuples of symbol combinations
+        bases_arr = gen_bases(self.x_init, o) # tuples of symbol combinations
         s = np.concatenate((s, np.array([sp.Mul(*combination) for combination in bases_arr])[:, None]), axis=0)
 
         # Find B-coefs for each state function and append to R
@@ -41,7 +43,7 @@ def decompile(self: Reservoir, order, verbose=False):
             # create equation, where n = r_n. dtanh(Bn1x1 + ... + Bnkxk + d_n)
             base_equation = tanh_derivs[o].subs('x', sum(weight * base for weight, base in zip(self.B[n], x_syms)) + self.d[n])
             if verbose and o == 1 and n == 0:
-                print("Base equation for neuron", n, ": ", base_equation)
+                print("(sanity check) base equation for neuron", n, ": ", base_equation)
 			
             # calculate taylor series for each base combination
             tseries = sp.S(0) 
@@ -70,9 +72,9 @@ def decompile(self: Reservoir, order, verbose=False):
 
 
     if verbose:
-        print("Decompile complete.")
-        print("R: ", R)
-        print("s: ", s)
+        print("--------------------\nDecompile complete.")
+        print("R:\n", R)
+        print("s:\n", s)
     return R, s
 
 Reservoir.decompile = decompile
@@ -80,9 +82,9 @@ Reservoir.decompile = decompile
 # given input vector x and order, returns array of all possible base combinations as arrays of sympy symbols
 # ex. gen_bases([1, 2, 3], 2) => [(x1, x1), (x1, x2), (x1, x3), (x2, x1), (x2, x2), (x2, x3), (x3, x1), (x3, x2), (x3, x3)]
 def gen_bases(x, order):
-    var_names = [f'x{i+1}' for i in range(len(x))]
+    var_names = [f'x{I+1}' for I in range(len(x))]
     sp_vars = sp.symbols(var_names)
-    combinations = itertools.product(sp_vars, repeat=order)
+    combinations = itertools.combinations_with_replacement(sp_vars, order)
     return list(combinations)
 
 
