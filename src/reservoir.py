@@ -37,6 +37,9 @@ class Reservoir:
     def decompile(self, order: int):
         pass
 
+    def decompilev2(self, order: int):
+        pass
+
     def print(self):
         print("--------------------")
         print("A:\n", self.A)

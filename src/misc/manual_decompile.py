@@ -4,12 +4,15 @@ import itertools
 from reservoir import Reservoir
 
 # Taylor Series approximation of reservoir machine code to 'order.' Returns R (coefs), s (symbolic bases)
-def decompile(self: Reservoir, order, verbose=False):
+# Doesn't account for interaction terms! (Decided to shelf this file in favor of decompilev2.py, as approach was clearly inefficient)
+
+# Taylor Series approximation of reservoir machine code to 'order.' Returns R (coefs), s (symbolic bases)
+def manual_decompile(self: Reservoir, order, verbose=False):
     if verbose:
         print("Decompiling reservoir...")
         self.print()
 
-    # 0th order T-series
+    # 0th order tseries to init R, s
     R = np.tanh(self.d)[:, None]
     s = np.array([1])[:, None]
     
@@ -23,7 +26,7 @@ def decompile(self: Reservoir, order, verbose=False):
     tanh_derivs = gen_tanh_derivs(order)
     if verbose:
         print("Tanh derivatives: ", tanh_derivs)
-
+        
     # calculates each order of the Taylor series, appends to R,s
     for o in range(1, order + 1):
         if verbose:
@@ -40,33 +43,39 @@ def decompile(self: Reservoir, order, verbose=False):
         # Find B-coefs for each state function and append to R
         R_section = np.empty((0, len(bases_arr)))
         for n in range(0, len(self.r_init)):
-            # create equation, where n = r_n. dtanh(Bn1x1 + ... + Bnkxk + d_n)
+            # create equation where n = r_n. dtanh(Bn1x1 + ... + Bnkxk + d_n)
             base_equation = tanh_derivs[o].subs('x', sum(weight * base for weight, base in zip(self.B[n], x_syms)) + self.d[n])
-            if verbose and o == 1 and n == 0:
+            if verbose:
                 print("(sanity check) base equation for neuron", n, ": ", base_equation)
 			
-            # calculate taylor series for each base combination
+            # taylor series for each base combination
+            # TODO: not accounting for multiplicity of bases
             tseries = sp.S(0) 
             for base_combo in bases_arr:
-                tseries_component = sp.S(1) 
+                B_coefs = sp.S(1) 
+                tseries_bases = sp.S(1)
                 for base in base_combo:
                     idx = int(base.name[1]) - 1 # Extract the index from the sympy symbol. Bit clunky.
-                    tseries_component *= base * self.B[n][idx]
+                    B_coefs *= self.B[n][idx]
+                    tseries_bases *= base
                 evaled_base_equation = base_equation.subs([(x_syms[i], self.x_init[i]) for i in range(len(self.x_init))])
-                tseries += tseries_component * evaled_base_equation / pre
+                tseries += ((B_coefs * evaled_base_equation) * pre) * tseries_bases
             
             # Decompose tseries into R, s
             coefficients = []
             for term in tseries.as_ordered_terms():
-                # Extract coefficient and symbol from each term
+                # extract coefficient and symbol from each term
                 coeff, _ = term.as_coeff_Mul()
                 coefficients.append(float(coeff))
             coefficients = np.array(coefficients)[None, :]
-            R_section = np.vstack((R_section, coefficients))
-            
-            if verbose and o == 1 and n == 0:
+
+            if verbose:
                 print("R section", R_section)
                 print("Tseries for neuron", n, ": ", tseries)
+
+            R_section = np.vstack((R_section, coefficients))
+            
+            
 
         R = np.hstack((R, R_section))
 
@@ -76,8 +85,6 @@ def decompile(self: Reservoir, order, verbose=False):
         print("R:\n", R)
         print("s:\n", s)
     return R, s
-
-Reservoir.decompile = decompile
 
 # given input vector x and order, returns array of all possible base combinations as arrays of sympy symbols
 # ex. gen_bases([1, 2, 3], 2) => [(x1, x1), (x1, x2), (x1, x3), (x2, x1), (x2, x2), (x2, x3), (x3, x1), (x3, x2), (x3, x3)]
