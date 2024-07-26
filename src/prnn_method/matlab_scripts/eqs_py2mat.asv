@@ -1,0 +1,69 @@
+function [transformed_eqs, recurrences, x] = eqs_py2mat(eqs)
+    % Initialize a cell array for unique variable names
+    unique_vars = {};
+
+    % First pass: Extract all variable names using regular expressions
+    for i = 1:length(eqs)
+        vars_in_eq = regexp(eqs{i}, '[a-zA-Z_]\w*', 'match');
+        unique_vars = unique([unique_vars, vars_in_eq]);
+    end
+    
+    % Declare all extracted variables as symbolic
+    for k = 1:length(unique_vars)
+        eval(sprintf('syms %s', unique_vars{k}));
+    end
+    
+    % Initialize a symbolic array for unique RHS variable names
+    rhs_symbols = sym([]); % Initialize as symbolic array
+    recurrences = {};
+
+    % Second pass: Evaluate equations and extract RHS variables
+    for i = 1:length(eqs)
+        eq = eval(eqs{i});  % Evaluate the equation string
+        rhs_expr = rhs(eq);  % Get the RHS of the equation
+        vars_in_rhs = symvar(rhs_expr);  % Extract symbols from RHS
+        rhs_symbols = unique([rhs_symbols, vars_in_rhs]);  % Collect unique RHS symbols
+    end
+    
+    % Define the symbolic variable t and assume it is real
+    syms t; assume(t, 'real');
+    
+    % Initialize the x(t) vector with unique RHS variables
+    num_unique_rhs_vars = length(rhs_symbols);
+    syms x(t) [num_unique_rhs_vars, 1];
+    x = x(t);  % Ensure x is treated as a function of t
+    assume(x, 'real');  % Assume the x(t) vector is real
+
+    % Initialize the cell array for transformed equations
+    transformed_eqs = cell(1, length(eqs));
+
+    % Third pass: Replace RHS symbols with x(t) vector elements and track recurrences
+    for i = 1:length(eqs)
+        eq = eval(eqs{i});  % Re-evaluate the equation to work with
+        lhs_expr = lhs(eq); % Extract the LHS of the equation
+        rhs_expr = rhs(eq); % Extract the RHS of the equation
+        
+        % Identify index of LHS in rhs_symbols if it exists
+        lhs_in_rhs_idx = find(rhs_symbols == lhs_expr);
+        
+        % Check for recurrence and note it
+        if ~isempty(lhs_in_rhs_idx)
+            recurrences{end+1} = sprintf('%s == x%d', char(lhs_expr), lhs_in_rhs_idx);
+        end
+        
+        % Replace RHS symbols with x(t) vector elements
+        for j = 1:length(rhs_symbols)
+            rhs_expr = subs(rhs_expr, rhs_symbols(j), x(j));
+        end
+        
+        % Define output variable (o1, o2, ...)
+        oi = sym(sprintf('o%d', i));
+        
+        % Store the final transformed equation
+        transformed_eqs{i} = sprintf('%s = %s;', char(oi), char(rhs_expr)); % for full 
+    end
+    
+    % % Display recurrences
+    % disp('Recurrences (if any):');
+    % disp(recurrences);
+end
