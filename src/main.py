@@ -32,47 +32,21 @@ def main():
         sp.Eq(o1, pitchfork_bifurcation + logic[currentlyRunning])
     ]
     
-    # display octave code
+    # display octave code (matlab readable equations)
     if verbose:
         for eq in logic_eqs:
             print(sp.octave_code(eq))
 
     # generate inputs
-    logic_pt = inputs.high_low_inputs(1000)
+    logic_inputs = inputs.high_low_inputs(1000)
 
-    # solve for W/ internalize recurrencies
-    nand_res, W, _ = runMethod(logic_eqs, logic_pt)
+    # solve for W/ internalize recurrencies (solveReservoir can also take & run inputs)
+    nand_res, _ = solveReservoir(logic_eqs)
     nand_res: Reservoir
 
     # run network forward
-    outputs = nand_res.run4input(W, logic_pt)
-    plotters.InOutSplit(logic_pt, outputs, currentlyRunning + " Gate")
-
-    # Circuit configuration and generation.
-    nand1 = nand_res.copy()
-    nand2 = nand_res.copy()
-    nand3 = nand_res.copy()
-
-    nand1.W = np.random.rand(1, 5)
-    nand2.W = np.random.rand(1, 5)
-    nand3.W = np.random.rand(1, 5)
-
-    # sets the input number of net2 to the output number of net1
-    # (outputNet, o#, inputNet, x#)
-    oscillator_circuit = [
-        [nand1, 1, nand2, 1],
-        [nand1, 1, nand2, 2],
-        [nand2, 1, nand3, 1],
-        [nand2, 1, nand3, 2],
-        [nand3, 1, nand1, 1],
-        [nand3, 1, nand1, 2]
-    ]
-    
-    # TODO: keep track of which input remain exposed
-    # retain B accordingly
-    # concat rs
-    # determine xs lenght (confirmed is 0 if na)
-    #oscillator_reservoir = circuit.connect(oscillator_circuit, [nand1, nand2, nand3])
+    outputs = nand_res.run4input(logic_inputs)
+    plotters.InOutSplit(logic_inputs, outputs, currentlyRunning + " Gate")
 
 if __name__ == "__main__":
     main()

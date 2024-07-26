@@ -110,11 +110,14 @@ xs = new_x;
 
 
 %% Run
-pt = inputs;
-rp = RP.train(pt);
-wrp = W*rp;
-outputs = wrp;
-
+if inputs ~= false
+    pt = inputs;
+    rp = RP.train(pt);
+    wrp = W*rp;
+    outputs = wrp;
+else
+    outputs = false;
+end
 
 
 %% Plot

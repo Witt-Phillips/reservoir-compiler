@@ -9,3 +9,6 @@ def high_low_inputs(time):
         np.array([[0.1], [0.1]])[:, np.newaxis] * ot),
         axis=1)
     return pt
+
+def zeros(time):
+    return np.zeros((1, time, 4))

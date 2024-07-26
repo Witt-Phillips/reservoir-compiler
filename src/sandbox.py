@@ -1,7 +1,35 @@
-from utils import utils, plotters
-import numpy as np
+from reservoir import *
+from prnn_method import circuit
+from utils import plotters
 
-inputs = utils.high_low_inputs(1000)
-outputs = np.random.rand(1, 4000)
+# Circuit configuration and generation.
+nand1 = gen_baseRNN(5, 2)
+nand2 = gen_baseRNN(5, 2)
+nand3 = gen_baseRNN(5, 2)
 
-plotters.InOutSplit(inputs, outputs, "tester")
+nand1.A += 1
+nand2.A = nand3.A = nand1.A
+
+nand1.W = np.random.rand(1, 5)
+nand2.W = np.random.rand(1, 5)
+nand3.W = np.random.rand(1, 5)
+
+# sets the input number of net2 to the output number of net1
+# (outputNet, o#, inputNet, x#)
+oscillator_circuit = [
+    [nand1, 1, nand2, 1],
+    [nand1, 1, nand2, 2],
+    [nand2, 1, nand3, 1],
+    [nand2, 1, nand3, 2],
+    [nand3, 1, nand1, 1],
+    [nand3, 1, nand1, 2]
+]
+
+circuit.connect(oscillator_circuit, [nand1, nand2, nand3])
+
+# inputs = np.zeros((1, 10, 4))
+
+# outputs = oscillator_reservoir.run4input(inputs)
+
+
+# plotters.InOutSplit(inputs, outputs, "Oscillator")

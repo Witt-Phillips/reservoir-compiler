@@ -1,4 +1,5 @@
 import numpy as np
+import matlab.engine
 
 """
 Reservoir Structure:
@@ -13,7 +14,7 @@ Reservoir Structure:
 * W: m x n
 """
 class Reservoir:
-    def __init__(self, A, B, r_init, x_init, global_timescale=0.1, gamma=100):
+    def __init__(self, A, B, r_init, x_init, global_timescale=0.1, gamma=100, d=None, W=None):
         self.A = A
         self.B = B
         self.r_init = r_init if r_init is not None else np.zeros((A.shape[0], 1))
@@ -21,11 +22,9 @@ class Reservoir:
         self.x_init = x_init
         self.global_timescale = global_timescale
         self.gamma = gamma
-        self.d = np.arctanh(self.r_init) - (self.A @ self.r_init) - (self.B @ self.x_init) if r_init is not None else np.zeros((A.shape[0], 1))
-        
-        # only defined after running through matlab.
-        self.matlabVersion = []
-        self.W = []
+        calc_d = np.arctanh(self.r_init) - (self.A @ self.r_init) - (self.B @ self.x_init) if r_init is not None else np.zeros((A.shape[0], 1))
+        self.d = d if d is not None else calc_d
+        self.W = W
 
     def copy(self):
         return Reservoir(self.A, self.B, self.r_init, self.x_init, self.global_timescale, self.gamma)
@@ -49,7 +48,11 @@ class Reservoir:
         self.r = self.r + (k1 + (2 * k2) + 2 * (k3 + k4)) / 6
         return self.r
     
-    def run4input(self, W, inputs, verbose=False):
+    def run4input(self, inputs, W=None, verbose=False):
+        W = W if W is not None else self.W
+        if W is None:
+            return ValueError("run4input: W must be defined, either by argument or in reservoir object")
+
         if verbose:
             print("Running for input...")
 
@@ -85,6 +88,9 @@ class Reservoir:
     def compile(self, output_eqs, input_syms, C1, Pd1, PdS, R, verbose=False):
         print("compile: deprecated, use runMethod instead")
         pass
+    #implemented in prnn_method.py
+    def solveReservoir(self, sym_eqs, inputs=None, verbose=False):
+        pass
     
     def print(self, precision=2):
         print("--------------------")
@@ -99,6 +105,29 @@ class Reservoir:
         print("1/gamma: ", np.round(1/self.gamma, precision))
         print("--------------------")
 
+    # convert python reservoir to matlab components
+    def py2mat(self):
+        # save reservoir to matlab readable format
+        A = matlab.double(self.A.tolist())
+        B = matlab.double(self.B.tolist())
+        r_init = matlab.double(self.r_init.tolist())
+        x_init = matlab.double(self.x_init.tolist())
+        global_timescale = matlab.double([self.global_timescale])
+        gamma = matlab.double([self.gamma])
+        return A, B, r_init, x_init, global_timescale, gamma
+
+# Convert matlab components to python reservoir 
+def mat2py(A, B, r_init, x_init, global_timescale, gamma, d=None, W=None) -> Reservoir:
+    A = np.array(A, dtype=float)
+    B = np.array(B, dtype=float)
+    d = np.array(d, dtype=float) if d is not None else None
+    r_init = np.array(r_init, dtype=float)
+    x_init = np.array(x_init, dtype=float)
+    global_timescale = float(global_timescale)
+    gamma = float(gamma)
+    W = np.array(W, dtype=float) if W is not None else None
+    return Reservoir(A, B, r_init, x_init, global_timescale, gamma, d, W)
+
 def gen_baseRNN(latent_dim, input_dim, global_timescale=0.001, gamma=100):
     np.random.seed(0)
     A = np.zeros((latent_dim, latent_dim))                     # Adjacency matrix 
@@ -108,7 +137,7 @@ def gen_baseRNN(latent_dim, input_dim, global_timescale=0.001, gamma=100):
     return Reservoir(A, B, r_init, x_init, global_timescale, gamma)
 
 # runMethod variant -- generates baseRNN.
-def runMethod(sym_eqs, inputs, verbose=False):
+def solveReservoir(sym_eqs, inputs=None, verbose=False):
     # determine number of baseRNN inputs -- init latents at 10x inputs
     x = set()
     for eq in sym_eqs:
@@ -117,4 +146,4 @@ def runMethod(sym_eqs, inputs, verbose=False):
     num_x = len(x)
 
     baseRNN = gen_baseRNN(num_x * 10, num_x)
-    return baseRNN.runMethod(sym_eqs, inputs, verbose)
+    return baseRNN.solveReservoir(sym_eqs, inputs, verbose)
