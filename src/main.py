@@ -45,7 +45,7 @@ def main():
     nand_res: Reservoir
 
     # run network forward
-    outputs = nand_res.run4input(W, logic_pt, verbose=True)
+    outputs = nand_res.run4input(W, logic_pt)
     plotters.InOutSplit(logic_pt, outputs, currentlyRunning + " Gate")
 
     # Circuit configuration and generation.

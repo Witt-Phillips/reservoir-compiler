@@ -73,8 +73,9 @@ OdNPL = o+oS/gam; % combines o and oS. Why divide by gam??
 W = lsqminnorm(RdNPL', OdNPL')';
 
 % Test for compilation accuracy
-disp(['Compiler residual: ' num2str(norm(W*RdNPL - OdNPL))]);
-
+if verbose
+    disp(['Compiler residual: ' num2str(norm(W*RdNPL - OdNPL))]);
+end
 %% Internalize recurrences -- NEW
 reccA = A;
 extB = B;
@@ -114,8 +115,10 @@ rp = RP.train(pt);
 wrp = W*rp;
 outputs = wrp;
 
+
+
 %% Plot
-if 1
+if 0
     time = 1:4000;
     figure;
     plot(time, pt(1, :, 1), 'DisplayName', 'Signal 1');

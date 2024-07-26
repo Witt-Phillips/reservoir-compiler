@@ -54,7 +54,7 @@ for i = 1:o-1
 end
 
 % Compute coefficients
-tic
+%tic
 % Tanh derivatives
 D = tanh_deriv(dv,o+1);
 DD = D(:,2:end).*Ars - D(:,1:end-1);
@@ -70,7 +70,7 @@ end
 
 % xdot terms
 C1  = As\CM;
-disp('Complete');
-toc
+%disp('Complete');
+%toc
 
 end

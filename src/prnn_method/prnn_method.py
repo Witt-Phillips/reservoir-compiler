@@ -12,6 +12,8 @@ import matlab.engine
 
 # assumes sym_eqs are passed as an array of sympy equations
 def runMethod(self: Reservoir, sym_eqs, inputs: np.ndarray, verbose: bool = False) -> np.ndarray:
+    print("Solving for reservoir. This may take a moment!")
+
     if verbose:
         print("running reservoir...")
 
@@ -33,8 +35,9 @@ def runMethod(self: Reservoir, sym_eqs, inputs: np.ndarray, verbose: bool = Fals
     eng = matlab.engine.start_matlab()
     if verbose:
         print("* matlab engine started")
-    eng.addpath(r'/Users/witt/all/cncl/compiler/src/matlab_dependencies', nargout=0)
-    eng.addpath(r'/Users/witt/all/cncl/compiler/src/prnn_method/matlab_scripts', nargout=0)
+    if 0:
+        eng.addpath(r'/Users/witt/all/cncl/compiler/src/matlab_dependencies', nargout=0)
+        eng.addpath(r'/Users/witt/all/cncl/compiler/src/prnn_method/matlab_scripts', nargout=0)
     eng.cd(r'/Users/witt/all/cncl/compiler/src/prnn_method/matlab_scripts', nargout=0)
     if verbose:
         print("* added scripts to matlab path")
@@ -50,8 +53,6 @@ def runMethod(self: Reservoir, sym_eqs, inputs: np.ndarray, verbose: bool = Fals
     
     # convert symbolic equations to strings for matlab evaluation
     matlab_eqs = [sp.octave_code(eq) for eq in sym_eqs]
-    # print("octave code: ", matlab_eqs)
-    # print(x_init)
 
     # run matlab script
     A, B, r_init, x_init, global_timescale, gamma, d, W, outputs = eng.runMethod(A, B, r_init, x_init, global_timescale, gamma, matlab_inputs, matlab_eqs, verbose, nargout=9) # add nargout=0 if ignoring output  
@@ -71,6 +72,7 @@ def runMethod(self: Reservoir, sym_eqs, inputs: np.ndarray, verbose: bool = Fals
 
     reservoir = Reservoir(A, B, r_init, x_init, global_timescale, gamma)
     reservoir.d = d
+
     return reservoir, W, outputs
 
 Reservoir.runMethod = runMethod

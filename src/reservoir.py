@@ -66,6 +66,7 @@ class Reservoir:
         
         if verbose:
             print("." * 100)
+            
         for i in range(1, nx):
             if i > nInd * nx:
                 nInd += 0.01
@@ -73,10 +74,7 @@ class Reservoir:
                     print("+", end="")
             self.propagate(inputs[:, i - 1, :])
             states[:, i] = self.r.flatten()
-        print()
 
-        #print(states[:, 0:4])
-        #print(self)
         return W @ states
 
     

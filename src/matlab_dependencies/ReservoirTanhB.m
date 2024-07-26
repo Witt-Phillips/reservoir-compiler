@@ -44,13 +44,16 @@ classdef ReservoirTanhB < handle
             nInd = 0; nx = size(x,2);                 % Counter
             D = zeros(size(o.A,1), nx);
             D(:,1) = o.r;
-            fprintf([repmat('.', [1, 100]) '\n']);
+            %fprintf([repmat('.', [1, 100]) '\n']);
             for i = 2:nx
-                if(i > nInd*nx); fprintf('='); nInd = nInd + .01; end
+                if(i > nInd*nx) 
+                    %fprintf('='); 
+                    nInd = nInd + .01; 
+                end
                 o.propagate(x(:,i-1,:)); % Propagate States
                 D(:,i) = o.r;
             end
-            fprintf('\n');
+            %fprintf('\n');
         end
         
         % Training: input both inputs x and control c 
