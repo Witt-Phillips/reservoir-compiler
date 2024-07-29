@@ -45,7 +45,7 @@ if verbose:
 logic_inputs = inputs.high_low_inputs(1000)
 
 # solve for W/ internalize recurrencies (solveReservoir can also take & run inputs)
-reservoir, _ = Reservoir.solveReservoir(logic_eqs)
+reservoir = Reservoir.solveReservoir(logic_eqs)
 reservoir: Reservoir
 
 # run network forward

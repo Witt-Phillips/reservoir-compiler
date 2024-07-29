@@ -11,22 +11,11 @@ import sympy as sp
 import matlab.engine
 
 # assumes sym_eqs are passed as an array of sympy equations
-def solve(self: Reservoir, sym_eqs, inputs=None, verbose: bool = False) -> np.ndarray:
+def solve(self: Reservoir, sym_eqs, verbose: bool = False) -> np.ndarray:
     print("Solving for reservoir. This may take a moment!")
 
     if verbose:
         print("running reservoir...")
-
-    # verify dimensions are valid
-    if inputs is not None:
-        sigs = inputs.shape[0]
-        res_inps = self.B.shape[1]
-        recs = 1 # TODO: iterate through sym_eqs, count recurrences (sym defined as dx# instead of o#)
-        outs =  1 #len(sym_eqs) - recs # TODO: after matlab has run, make sure we have the right number of outputs
-
-        preface = "runMethod: reservoir compliance: "
-        assert sigs <= res_inps, preface + f"more signals ({sigs}) than expected inputs ({res_inps})."
-        assert recs == res_inps - sigs, preface + "recurrencies must be equal to inputs - signals"
 
     # reservoir dims
     n = self.A.shape[0]
@@ -46,17 +35,12 @@ def solve(self: Reservoir, sym_eqs, inputs=None, verbose: bool = False) -> np.nd
     # convert reservoir, inputs, and equations to matlab format
     A, B, r_init, x_init, global_timescale, gamma = self.py2mat()
     
-    matlab_inputs = matlab.double(inputs.tolist()) if inputs is not None else False
     matlab_eqs = [sp.octave_code(eq) for eq in sym_eqs]
 
     # run matlab script
-    A, B, r_init, x_init, global_timescale, gamma, d, W, outputs = eng.runMethod(A, B, r_init, x_init, global_timescale, gamma, matlab_inputs, matlab_eqs, verbose, nargout=9) # add nargout=0 if ignoring output  
+    A, B, r_init, x_init, global_timescale, gamma, d, W = eng.runMethod(A, B, r_init, x_init, global_timescale, gamma, matlab_eqs, verbose, nargout=8) # add nargout=0 if ignoring output  
     eng.quit()
 
-    # convert back to python format
-    reservoir = Reservoir.mat2py(A, B, r_init, x_init, global_timescale, gamma, d, W)
-    outputs = np.array(outputs, dtype=float)
-
-    return reservoir, outputs
+    return Reservoir.mat2py(A, B, r_init, x_init, global_timescale, gamma, d, W)
 
 Reservoir.solve = solve

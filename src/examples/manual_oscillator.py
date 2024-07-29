@@ -4,30 +4,12 @@ import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
-import sympy as sp
 from reservoir import *
 from prnn_method import circuit, prnn_method
 from utils import inputs, plotters
 
 # define symbolic equations (naming is not constrained) -----------------
-o1, s1, s2 = sp.symbols('o1 s1 s2')
-
-# parameters and pitchfork base
-xw = 0.025
-xf = 0.1
-cx = 3/13
-ax = -cx / (3 * xw**2)
-pitchfork_bifurcation = (ax * (o1 ** 3)) + (cx * o1)
-
-# shifting logic for each gate
-nand_logic = 0.1 + (s1 + xf) * (-s2 - xf) / (2 * xf)
-
-# list of symbolic output equations
-logic_eqs = [
-    sp.Eq(o1, pitchfork_bifurcation + nand_logic)
-]
-
-nand_res, _ = Reservoir.solveReservoir(logic_eqs)
+nand_res = Reservoir.loadFile("nand")
 
 # Manual circuit: Oscillator
 n = 30

@@ -1,4 +1,4 @@
-function [A, B, rs, xs, dt, gam, d, W, outputs] = runMethod(A, B, rs, xs, dt, gam, inputs, sym_eqs, verbose)
+function [A, B, rs, xs, dt, gam, d, W, outputs] = runMethod(A, B, rs, xs, dt, gam, sym_eqs, verbose)
 %% Initialize reservoir
 rng(0);  
 m = size(xs, 1);
@@ -108,32 +108,3 @@ A = reccA;
 B = extB;
 xs = new_x;
 
-
-%% Run
-if inputs ~= false
-    pt = inputs;
-    rp = RP.train(pt);
-    wrp = W*rp;
-    outputs = wrp;
-else
-    outputs = false;
-end
-
-
-%% Plot
-if 0
-    time = 1:4000;
-    figure;
-    plot(time, pt(1, :, 1), 'DisplayName', 'Signal 1');
-    hold on;
-    plot(time, pt(2, :, 1), 'DisplayName', 'Signal 2');
-    plot(time, outputs, 'DisplayName', 'outputs', 'LineWidth', 2);
-    ylim([-.2 .2]);
-    
-    xlabel('Time');
-    ylabel('Value');
-    title('NAND Gate Signals and Output');
-    legend;
-    hold off;
-end
-end

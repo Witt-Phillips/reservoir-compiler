@@ -1,4 +1,4 @@
-function [A, B, rs, xs, dt, gam, d, W, outputs] = runMethod(A, B, rs, xs, dt, gam, inputs, sym_eqs)
+function [A, B, rs, xs, dt, gam, d, W, outputs] = runMethod(A, B, rs, xs, dt, gam, sym_eqs, verbose)
 %% Initialize reservoir
 rng(0);  
 m = size(xs, 1);
@@ -73,8 +73,9 @@ OdNPL = o+oS/gam; % combines o and oS. Why divide by gam??
 W = lsqminnorm(RdNPL', OdNPL')';
 
 % Test for compilation accuracy
-disp(['Compiler residual: ' num2str(norm(W*RdNPL - OdNPL))]);
-
+if verbose
+    disp(['Compiler residual: ' num2str(norm(W*RdNPL - OdNPL))]);
+end
 %% Internalize recurrences -- NEW
 reccA = A;
 extB = B;
@@ -109,13 +110,18 @@ xs = new_x;
 
 
 %% Run
-pt = inputs;
-rp = RP.train(pt);
-wrp = W*rp;
-outputs = wrp;
+if inputs ~= false
+    pt = inputs;
+    rp = RP.train(pt);
+    wrp = W*rp;
+    outputs = wrp;
+else
+    outputs = false;
+end
+
 
 %% Plot
-if 1
+if 0
     time = 1:4000;
     figure;
     plot(time, pt(1, :, 1), 'DisplayName', 'Signal 1');
@@ -130,24 +136,4 @@ if 1
     legend;
     hold off;
 end
-
-if 0
-    % Extract the x, y, and z components
-    x = outputs(1, :);
-    y = outputs(2, :);
-    z = outputs(3, :);
-    
-    % Create a 3D plot
-    figure;
-    plot3(x, y, z, 'LineWidth', 2);
-    xlabel('x');
-    ylabel('y');
-    zlabel('z');
-    title('3D Plot of Outputs');
-    grid on;
-    
-    % Optional: add a view angle to better visualize the plot
-    view(3); % Default 3D view
-end
-
 end

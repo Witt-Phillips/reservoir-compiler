@@ -41,12 +41,12 @@ def main():
     logic_inputs = inputs.high_low_inputs(1000)
 
     # solve for W/ internalize recurrencies (solveReservoir can also take & run inputs)
-    nand_res, _ = Reservoir.solveReservoir(logic_eqs)
+    nand_res = Reservoir.solveReservoir(logic_eqs)
     nand_res: Reservoir
 
     # run network forward
-    #outputs = nand_res.run4input(logic_inputs)
-    #plotters.InOutSplit(logic_inputs, outputs, currentlyRunning + " Gate")
+    outputs = nand_res.run4input(logic_inputs)
+    plotters.InOutSplit(logic_inputs, outputs, currentlyRunning + " Gate")
 
     """     # circuit experimentation
     nand1 = nand_res.copy()

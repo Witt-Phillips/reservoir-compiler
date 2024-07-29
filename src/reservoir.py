@@ -172,8 +172,8 @@ class Reservoir:
         return A, B, r_init, x_init, global_timescale, gamma
 
     # Convert matlab components to python reservoir 
-    @classmethod
-    def mat2py(cls, A, B, r_init, x_init, global_timescale, gamma, d=None, W=None):
+    @staticmethod
+    def mat2py(A, B, r_init, x_init, global_timescale, gamma, d=None, W=None):
         A = np.array(A, dtype=float)
         B = np.array(B, dtype=float)
         d = np.array(d, dtype=float) if d is not None else None
@@ -184,8 +184,8 @@ class Reservoir:
         W = np.array(W, dtype=float) if W is not None else None
         return Reservoir(A, B, r_init, x_init, global_timescale, gamma, d, W)
     
-    @classmethod
-    def gen_baseRNN(cls, latent_dim, input_dim, global_timescale=0.001, gamma=100):
+    @staticmethod
+    def gen_baseRNN(latent_dim, input_dim, global_timescale=0.001, gamma=100):
         np.random.seed(0)
         A = np.zeros((latent_dim, latent_dim))                     # Adjacency matrix 
         B = (np.random.rand(latent_dim, input_dim) - 0.5) * 0.05  # Input weight matrix
@@ -196,10 +196,10 @@ class Reservoir:
     # implemented in prnn_method.py
     def solve(self, sym_eqs, inputs=None, verbose: bool = False) -> np.ndarray:
         pass
-
+    
     # runMethod variant -- generates baseRNN.
-    @classmethod
-    def solveReservoir(cls, sym_eqs, inputs=None, verbose=False):
+    @staticmethod
+    def solveReservoir(sym_eqs, verbose=False):
         # determine number of baseRNN inputs -- init latents at 10x inputs
         x = set()
         for eq in sym_eqs:
@@ -207,5 +207,8 @@ class Reservoir:
                 x.add(symbol)
         num_x = len(x)
 
+        #TODO how many latents -- parameter sweep? 
         baseRNN = Reservoir.gen_baseRNN(num_x * 10, num_x)
-        return baseRNN.solve(sym_eqs, inputs, verbose)
+        return baseRNN.solve(sym_eqs, verbose)
+
+
