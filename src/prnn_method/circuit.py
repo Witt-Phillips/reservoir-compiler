@@ -11,6 +11,7 @@ def connect(circuit, reservoirs) -> Reservoir:
     idx = 0
     reservoir_indices = {}
     for reservoir in reservoirs:
+        #puts A on diagonal
         A = reservoir.A
         size = A.shape[0]
         reservoir_indices[reservoir] = idx
@@ -22,7 +23,6 @@ def connect(circuit, reservoirs) -> Reservoir:
     #reservoirs = set()
 
     for connection in circuit:
-        # for outputNet.o_a = inputNet.x_b
         outputNet, a, inputNet, b = connection
         #reservoirs.add(outputNet)
         #reservoirs.add(inputNet)
@@ -30,7 +30,8 @@ def connect(circuit, reservoirs) -> Reservoir:
         # Internalize connection
         W_row = outputNet.W[a - 1, :].reshape(1, -1) # * r
         B_col = inputNet.B[:, b - 1].reshape(-1, 1)
-        A_section = B_col @ W_row
+        #A_section = B_col @ W_row
+        A_section = np.outer(B_col, W_row)
 
         # keep track of internalized inputs/ outputs
         outputNet.usedOutputs.append(a)
@@ -114,6 +115,6 @@ def connect(circuit, reservoirs) -> Reservoir:
         x_init = np.vstack([x_init, reservoir.x_init])
         r_init = np.vstack([r_init, reservoir.r_init])
         d = np.vstack([d, reservoir.d])
-        
-    return Reservoir(combA, B, r_init, x_init, .1, 100, d, W)
+
+    return Reservoir(combA, B, r_init, x_init, .001, 100, d, W)
     

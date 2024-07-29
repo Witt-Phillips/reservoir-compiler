@@ -7,9 +7,10 @@ sys.path.append(parent_dir)
 from reservoir import *
 from prnn_method import circuit, prnn_method
 from utils import inputs, plotters
+import numpy as np
 
 # define symbolic equations (naming is not constrained) -----------------
-nand_res = Reservoir.loadFile("nand")
+nand_res: Reservoir = Reservoir.loadFile("nand")
 
 # Manual circuit: Oscillator
 n = 30
@@ -31,11 +32,10 @@ AC = np.block([
 
 BC = np.tile(OB, (3, 1))
 
-
 RAD = Reservoir(AC, 
                 BC, 
                 np.tile(nand_res.r_init, (3, 1)), 
-                0, 
+                np.zeros((1,1)), 
                 nand_res.global_timescale, 
                 nand_res.gamma, 
                 np.tile(nand_res.d, (3, 1)), 
@@ -50,12 +50,10 @@ radp = RAD.run4input(input_data, np.identity(3*n))
 # Find o=Wr
 outputs = np.vstack([
     W @ radp[0:30, :],  # first nand
-    W @ radp[30:60, :],  # second nand
-    W @ radp[60:90, :]   # third nand
+    W @ radp[30:60, :], # second nand
+    W @ radp[60:90, :]  # third nand
 ])
 
 # plot using 'outputs' to see all three signals
 exposed_output = outputs[2, :].reshape(1, -1)
-print(exposed_output.shape)
-
-plotters.InOutSplit(input_data, exposed_output, "Oscillator")
+plotters.InOutSplit(input_data, exposed_output, "Manually Constructed Oscillator")

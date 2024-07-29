@@ -45,3 +45,24 @@ def InOutSplit(inputs, outputs, title):
 
     plt.tight_layout()
     plt.show()
+
+def Outputs(outputs, title):
+    time = np.arange(outputs.shape[1])
+    plt.figure(figsize=(12, 8))
+
+    # Outputs only
+    for j in range(outputs.shape[0]):
+        plt.plot(time, outputs[j, :], label=f'Output {j+1}')
+    
+    # Adding a 10% margin to y-limits for outputs
+    outputs_min, outputs_max = np.min(outputs), np.max(outputs)
+    outputs_margin = (outputs_max - outputs_min) * 0.1
+    plt.ylim(outputs_min - outputs_margin, outputs_max + outputs_margin)
+
+    plt.xlabel('Time')
+    plt.ylabel('Output Value')
+    plt.title(f'{title}')
+    plt.legend()
+
+    plt.tight_layout()
+    plt.show()
