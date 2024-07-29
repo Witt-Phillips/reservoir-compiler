@@ -1,5 +1,6 @@
 from reservoir import Reservoir
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
 import numpy as np    
 
 def InOutSplit(inputs, outputs, title):
@@ -65,4 +66,20 @@ def Outputs(outputs, title):
     plt.legend()
 
     plt.tight_layout()
+    plt.show()
+
+def threeD(outputs, title):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(outputs[0, :], outputs[1, :], outputs[2, :])
+    ax.set_title(title)
+    plt.show()
+
+def threeDInputOutput(inputs, outputs, title):
+    fig = plt.figure()
+    ax = fig.add_subplot(111, projection='3d')
+    ax.plot(inputs[0, :], inputs[1, :], inputs[2, :], label='Input')
+    ax.plot(outputs[0, :], outputs[1, :], outputs[2, :], label='Output')
+    ax.set_title(title)
+    plt.legend()
     plt.show()

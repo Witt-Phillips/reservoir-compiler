@@ -29,27 +29,24 @@ logic = {
     'xnor': 0.0 + (s1) * (s2) / xf
 }
 
-currentlyRunning = 'nor'
-
-# list of symbolic output equations
+currentlyRunning = 'nand'
 logic_eqs = [
     sp.Eq(o1, pitchfork_bifurcation + logic[currentlyRunning])
 ]
+
+logic_inputs = inputs.high_low_inputs(1000)
+reservoir = Reservoir.solveReservoir(logic_eqs)
+
+reservoir: Reservoir
 
 # display octave code (matlab readable equations)
 if verbose:
     for eq in logic_eqs:
         print(sp.octave_code(eq))
 
-# generate inputs
-logic_inputs = inputs.high_low_inputs(1000)
-
-# solve for W/ internalize recurrencies (solveReservoir can also take & run inputs)
-reservoir = Reservoir.solveReservoir(logic_eqs)
-reservoir: Reservoir
-
 # run network forward
 outputs = reservoir.run4input(logic_inputs)
+print(outputs.shape)
 plotters.InOutSplit(logic_inputs, outputs, currentlyRunning + " Gate")
 
 # save preset

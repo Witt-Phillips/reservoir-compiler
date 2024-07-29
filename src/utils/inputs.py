@@ -25,3 +25,26 @@ def sr_inputs(time):
     ), axis=1) * 0.1
 
     return pt
+
+
+# manually generated lorenz attractor
+def lorenz(time, dt=0.01):
+    time -= 1
+    x, y, z = np.zeros((3, time + 1, 4))
+    x[0, :], y[0, :], z[0, :] = 0, 1, 1.05
+
+    for i in range(time):
+        dx, dy, dz = lorenz_engine(x[i], y[i], z[i])
+        x[i + 1, :] = x[i, :] + dx * dt
+        y[i + 1, :] = y[i, :] + dy * dt
+        z[i + 1, :] = z[i, :] + dz * dt
+
+    outputs = np.stack((x, y, z), axis=0)
+    print(outputs.shape)
+    return outputs
+
+def lorenz_engine(x, y, z, sig=10, rho=28, beta=8/3):
+    dx = sig * (y - x)
+    dy = x * (rho - z) - y
+    dz = x * y - beta * z
+    return dx, dy, dz

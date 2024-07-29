@@ -15,6 +15,7 @@ nand3 = nand.copy()
 
 # TODO: Make circuit wiring match Verilog conventions
 # (outputNet, o#, inputNet, x#)
+
 oscillator_circuit = [
     [nand1, 1, nand2, 1],
     [nand1, 1, nand2, 2],
@@ -24,8 +25,10 @@ oscillator_circuit = [
     [nand3, 1, nand1, 2]
 ]
 
-#TODO: Remove list of reservoir argument to connect(). Read from circuit instead.
 circuitRes = circuit.connect(oscillator_circuit, [nand1, nand2, nand3])
+
+#TODO: Remove list of reservoir argument to connect(). Read from circuit instead.
+
 
 # Run for no input.
 time = 7000
