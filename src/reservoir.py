@@ -210,5 +210,3 @@ class Reservoir:
         #TODO how many latents -- parameter sweep? 
         baseRNN = Reservoir.gen_baseRNN(num_x * 10, num_x)
         return baseRNN.solve(sym_eqs, verbose)
-
-

@@ -116,5 +116,8 @@ def connect(circuit, reservoirs) -> Reservoir:
         r_init = np.vstack([r_init, reservoir.r_init])
         d = np.vstack([d, reservoir.d])
 
+    #TODO: remove superflous (all 0) cols of B/ x_inits.
+
+
     return Reservoir(combA, B, r_init, x_init, .001, 100, d, W)
     

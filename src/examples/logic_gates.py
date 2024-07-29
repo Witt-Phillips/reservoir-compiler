@@ -29,7 +29,7 @@ logic = {
     'xnor': 0.0 + (s1) * (s2) / xf
 }
 
-currentlyRunning = 'nand'
+currentlyRunning = 'nor'
 
 # list of symbolic output equations
 logic_eqs = [
@@ -54,7 +54,7 @@ plotters.InOutSplit(logic_inputs, outputs, currentlyRunning + " Gate")
 
 # save preset
 if 0:
-    reservoir.saveFile("nand")  
+    reservoir.saveFile(currentlyRunning)  
     # validate
-    res = Reservoir.loadFile("nand")
+    res = Reservoir.loadFile(currentlyRunning)
     res: Reservoir
