@@ -114,10 +114,6 @@ def connect(circuit, reservoirs) -> Reservoir:
         x_init = np.vstack([x_init, reservoir.x_init])
         r_init = np.vstack([r_init, reservoir.r_init])
         d = np.vstack([d, reservoir.d])
-
-
-    np.set_printoptions(precision=2, suppress=True, linewidth=200)
-    print(combA)
-    
+        
     return Reservoir(combA, B, r_init, x_init, .1, 100, d, W)
     
