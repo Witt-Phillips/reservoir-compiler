@@ -25,7 +25,7 @@ def main():
         'xnor': 0.0 + (s1) * (s2) / xf
     }
 
-    currentlyRunning = 'and'
+    currentlyRunning = 'nand'
     
     # list of symbolic output equations
     logic_eqs = [
@@ -41,12 +41,36 @@ def main():
     logic_inputs = inputs.high_low_inputs(1000)
 
     # solve for W/ internalize recurrencies (solveReservoir can also take & run inputs)
-    nand_res, _ = solveReservoir(logic_eqs)
+    nand_res, _ = Reservoir.solveReservoir(logic_eqs)
     nand_res: Reservoir
 
     # run network forward
-    outputs = nand_res.run4input(logic_inputs)
-    plotters.InOutSplit(logic_inputs, outputs, currentlyRunning + " Gate")
+    #outputs = nand_res.run4input(logic_inputs)
+    #plotters.InOutSplit(logic_inputs, outputs, currentlyRunning + " Gate")
+
+    """     # circuit experimentation
+    nand1 = nand_res.copy()
+    nand2 = nand_res.copy()
+    nand3 = nand_res.copy()
+
+    oscillator_circuit = [
+    [nand1, 1, nand2, 1],
+    [nand1, 1, nand2, 2],
+    [nand2, 1, nand3, 1],
+    [nand2, 1, nand3, 2],
+    [nand3, 1, nand1, 1],
+    [nand3, 1, nand1, 2]
+]
+
+    #TODO no need to pass in the gates again as they are already in the circuit
+    oscillatorRes = circuit.connect(oscillator_circuit, [nand1, nand2, nand3])
+    oscillatorRes.printDims()
+    
+    # Run oscillator res forward
+    osc_inputs = np.zeros((3, 7000, 4))
+    outputs = oscillatorRes.run4input(osc_inputs)
+    plotters.InOutSplit(osc_inputs, outputs, "Oscillator") """
+
 
 if __name__ == "__main__":
     main()

@@ -62,15 +62,13 @@ RAD.r = repmat(rs,[3,1]);
 time = 7000;
 radp = RAD.train(zeros(1,time,4));
 
-Wradp3 = [
-    W*radp((1:n),:);    % readout, first nand
-    W*radp((1:n)+n,:);  % readout, second nand
-    W*radp((1:n)+2*n,:) % readout, third nand
-
-];  
-
+Wradp3 = [W*radp((1:n),:); % readout, first nand
+W*radp((1:n)+n,:);  % readout, second nand
+W*radp((1:n)+2*n,:)];  % readout, third nand
 Wradp3(:,end); 
-transformed_out = Wradp3(3, :);
+
+transformed_out = Wradp3;
+
 
 %% Plot
 if 1

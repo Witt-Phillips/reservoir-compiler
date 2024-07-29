@@ -11,7 +11,7 @@ import sympy as sp
 import matlab.engine
 
 # assumes sym_eqs are passed as an array of sympy equations
-def solveReservoir(self: Reservoir, sym_eqs, inputs=None, verbose: bool = False) -> np.ndarray:
+def solve(self: Reservoir, sym_eqs, inputs=None, verbose: bool = False) -> np.ndarray:
     print("Solving for reservoir. This may take a moment!")
 
     if verbose:
@@ -54,9 +54,9 @@ def solveReservoir(self: Reservoir, sym_eqs, inputs=None, verbose: bool = False)
     eng.quit()
 
     # convert back to python format
-    reservoir = mat2py(A, B, r_init, x_init, global_timescale, gamma, d, W)
+    reservoir = Reservoir.mat2py(A, B, r_init, x_init, global_timescale, gamma, d, W)
     outputs = np.array(outputs, dtype=float)
 
     return reservoir, outputs
 
-Reservoir.solveReservoir = solveReservoir
+Reservoir.solve = solve

@@ -1,5 +1,7 @@
 import numpy as np
 import matlab.engine
+import pickle as pkl
+import os
 
 """
 Reservoir Structure:
@@ -22,12 +24,16 @@ class Reservoir:
         self.x_init = x_init
         self.global_timescale = global_timescale
         self.gamma = gamma
-        calc_d = np.arctanh(self.r_init) - (self.A @ self.r_init) - (self.B @ self.x_init) if r_init is not None else np.zeros((A.shape[0], 1))
-        self.d = d if d is not None else calc_d
+        self.d = d if d is not None else np.arctanh(self.r_init) - (self.A @ self.r_init) - (self.B @ self.x_init) if r_init is not None else np.zeros((A.shape[0], 1))
+
         self.W = W
 
+        # for circuitry
+        self.usedInputs = []
+        self.usedOutputs = []
+
     def copy(self):
-        return Reservoir(self.A, self.B, self.r_init, self.x_init, self.global_timescale, self.gamma)
+        return Reservoir(self.A, self.B, self.r_init, self.x_init, self.global_timescale, self.gamma, self.d, self.W)
     
     def del_r(self, r, x):
         # Ensure r and x are column vectors
@@ -88,10 +94,7 @@ class Reservoir:
     def compile(self, output_eqs, input_syms, C1, Pd1, PdS, R, verbose=False):
         print("compile: deprecated, use runMethod instead")
         pass
-    #implemented in prnn_method.py
-    def solveReservoir(self, sym_eqs, inputs=None, verbose=False):
-        pass
-    
+
     def print(self, precision=2):
         print("--------------------")
         print("Reservoir Parameters")
@@ -103,7 +106,59 @@ class Reservoir:
         print("r:\n", np.round(self.r, precision))
         print("global_timescale: ", np.round(self.global_timescale, precision))
         print("1/gamma: ", np.round(1/self.gamma, precision))
+        if self.W is not None:
+            print("W:\n", np.round(self.W, precision))
         print("--------------------")
+    
+    def printDims(self):
+        print("A: ", self.A.shape)
+        print("B: ", self.B.shape)
+        print("r_init: ", self.r_init.shape)
+        print("x_init: ", self.x_init.shape)
+        print("d: ", self.d.shape)
+        print("r: ", self.r.shape)
+        print("global_timescale: ", self.global_timescale)
+        print("gamma: ", self.gamma)
+        if self.W is not None:
+            print("W: ", self.W.shape)
+
+    def saveFile(self, filename):
+        directory = "./src/presets"
+        
+        # check dir exists
+        if not os.path.exists(directory):
+            raise FileNotFoundError(
+                f"The directory '{directory}' does not exist. Please create the directory or navigate to the root 'compiler' directory."
+            )
+        
+        os.makedirs(directory, exist_ok=True)
+        
+        # save object to res file
+        filepath = os.path.join(directory, f"{filename}.rsvr")
+        with open(filepath, "wb") as f:
+            pkl.dump(self, f)
+    
+    @classmethod
+    def loadFile(cls, filename):
+        directory = "./src/presets"
+        filepath = os.path.join(directory, f"{filename}.rsvr")
+        
+        # check dir exists
+        if not os.path.exists(directory):
+            raise FileNotFoundError(
+                f"The directory '{directory}' does not exist. Please ensure the correct directory structure is in place."
+            )
+        
+        # find file
+        if not os.path.isfile(filepath):
+            raise FileNotFoundError(
+                f"The file '{filepath}' does not exist. Please check the filename or ensure the file has been created in the 'src/presets' directory."
+            )
+        
+        # load reservoir
+        with open(filepath, "rb") as f:
+            obj = pkl.load(f)
+        return obj
 
     # convert python reservoir to matlab components
     def py2mat(self):
@@ -116,34 +171,41 @@ class Reservoir:
         gamma = matlab.double([self.gamma])
         return A, B, r_init, x_init, global_timescale, gamma
 
-# Convert matlab components to python reservoir 
-def mat2py(A, B, r_init, x_init, global_timescale, gamma, d=None, W=None) -> Reservoir:
-    A = np.array(A, dtype=float)
-    B = np.array(B, dtype=float)
-    d = np.array(d, dtype=float) if d is not None else None
-    r_init = np.array(r_init, dtype=float)
-    x_init = np.array(x_init, dtype=float)
-    global_timescale = float(global_timescale)
-    gamma = float(gamma)
-    W = np.array(W, dtype=float) if W is not None else None
-    return Reservoir(A, B, r_init, x_init, global_timescale, gamma, d, W)
+    # Convert matlab components to python reservoir 
+    @classmethod
+    def mat2py(cls, A, B, r_init, x_init, global_timescale, gamma, d=None, W=None):
+        A = np.array(A, dtype=float)
+        B = np.array(B, dtype=float)
+        d = np.array(d, dtype=float) if d is not None else None
+        r_init = np.array(r_init, dtype=float)
+        x_init = np.array(x_init, dtype=float)
+        global_timescale = float(global_timescale)
+        gamma = float(gamma)
+        W = np.array(W, dtype=float) if W is not None else None
+        return Reservoir(A, B, r_init, x_init, global_timescale, gamma, d, W)
+    
+    @classmethod
+    def gen_baseRNN(cls, latent_dim, input_dim, global_timescale=0.001, gamma=100):
+        np.random.seed(0)
+        A = np.zeros((latent_dim, latent_dim))                     # Adjacency matrix 
+        B = (np.random.rand(latent_dim, input_dim) - 0.5) * 0.05  # Input weight matrix
+        r_init = np.random.rand(latent_dim, 1) - 0.5
+        x_init = np.zeros((input_dim, 1))
+        return Reservoir(A, B, r_init, x_init, global_timescale, gamma)
 
-def gen_baseRNN(latent_dim, input_dim, global_timescale=0.001, gamma=100):
-    np.random.seed(0)
-    A = np.zeros((latent_dim, latent_dim))                     # Adjacency matrix 
-    B = (np.random.rand(latent_dim, input_dim) - 0.5) * 0.05  # Input weight matrix
-    r_init = np.random.rand(latent_dim, 1) - 0.5
-    x_init = np.zeros((input_dim, 1))
-    return Reservoir(A, B, r_init, x_init, global_timescale, gamma)
+    # implemented in prnn_method.py
+    def solve(self, sym_eqs, inputs=None, verbose: bool = False) -> np.ndarray:
+        pass
 
-# runMethod variant -- generates baseRNN.
-def solveReservoir(sym_eqs, inputs=None, verbose=False):
-    # determine number of baseRNN inputs -- init latents at 10x inputs
-    x = set()
-    for eq in sym_eqs:
-        for symbol in eq.rhs.free_symbols:
-            x.add(symbol)
-    num_x = len(x)
+    # runMethod variant -- generates baseRNN.
+    @classmethod
+    def solveReservoir(cls, sym_eqs, inputs=None, verbose=False):
+        # determine number of baseRNN inputs -- init latents at 10x inputs
+        x = set()
+        for eq in sym_eqs:
+            for symbol in eq.rhs.free_symbols:
+                x.add(symbol)
+        num_x = len(x)
 
-    baseRNN = gen_baseRNN(num_x * 10, num_x)
-    return baseRNN.solveReservoir(sym_eqs, inputs, verbose)
+        baseRNN = Reservoir.gen_baseRNN(num_x * 10, num_x)
+        return baseRNN.solve(sym_eqs, inputs, verbose)
