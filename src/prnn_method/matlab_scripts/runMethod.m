@@ -51,8 +51,7 @@ RdNPL = gen_basis(Aa,PdS);
 o = zeros(length(output_eqs),size(C1,2)); % Create the o matrix as zeros
 oS = [];
 
-%o(1,m+1) = 1; % set recurrent variables to one. Here, we take "1" x3 (see
-%Pd1 for why)
+% Put 1s at recurrent inputs in o
 for i = 1:length(recurrences)
     % get input & output #
     recurrence = recurrences{i};
@@ -61,7 +60,7 @@ for i = 1:length(recurrences)
         outputIndex = str2double(tokens{1}{1}); % o1 -> 1
         inputIndex = str2double(tokens{1}{2});  % x3 -> 3
     end
-    o(1, 1 + inputIndex) = 1;
+    o(outputIndex, inputIndex + 1) = 1;
     oS = [oS; DX(inputIndex, :)];
 end
 

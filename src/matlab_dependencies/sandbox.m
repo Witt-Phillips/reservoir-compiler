@@ -28,7 +28,11 @@ rotation_eqs = {
 verbose = false;
 [A, B, rs, xs, dt, gam, d, W] = runMethod(A, B, rs, xs, dt, gam, nand_eq, verbose);
 
-rotation_res = ReservoirTanhB(A, B , rs, xs, dt, gam);
+reservoir = ReservoirTanhB(A, B , rs, xs, dt, gam);
+reservoir.d = d;
+states = reservoir.train(pt_logic);
+outputs = W * states;
+
 
 %% Plot
 if 1

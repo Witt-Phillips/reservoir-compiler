@@ -26,13 +26,15 @@ rotation_eqs = {
 
 
 verbose = false;
-[A, B, rs, xs, dt, gam, d, W] = runMethod(A, B, rs, xs, dt, gam, rotation_eqs, verbose);
+[A, B, rs, xs, dt, gam, d, W] = runMethod(A, B, rs, xs, dt, gam, nand_eq, verbose);
 
-rotation_res = ReservoirTanhB(A, B , rs, xs, dt, gam);
+reservoir = ReservoirTanhB(A, B , rs, xs, dt, gam);
+states = reservoir.train(pt_logic);
+outputs =
 
 
 %% Plot
-if 0
+if 1
     time = 1:4000;
     figure;
     plot(time, pt_logic(1, :, 1), 'DisplayName', 'Signal 1');
