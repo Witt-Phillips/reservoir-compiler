@@ -23,18 +23,15 @@ jobs:
     - name: Install Miniconda
       uses: conda-incubator/setup-miniconda@v2
       with:
-        python-version: 3.10
         auto-update-conda: true
-        activate-environment: base
 
     - name: Create and activate conda environment
       run: |
         conda env create -f environment.yml
-        conda activate venv
+        echo "conda activate venv" >> $GITHUB_ENV
 
     - name: Lint with flake8
       run: |
-        conda install -n venv flake8
         conda run -n venv flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
         conda run -n venv flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
 
