@@ -1,13 +1,3 @@
----
-title: "A Compiler for the Reservoir Computer"
-output:
-  html_document:
-    toc: true
-    toc_depth: 2
-    toc_float:
-      collapsed: true
----
-
 ![RNN Graphic, Image based on Kim paper linked below.](rnn.svg)
 
 Working towards a compiler to express high-level code in RNNs. Currently building a framework for programming RNNs based on Jason [Kim's method](https://www.nature.com/articles/s42256-023-00668-8).
