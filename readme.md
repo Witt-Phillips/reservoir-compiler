@@ -1,4 +1,16 @@
-<img src="rnn.svg" alt="RNN Graphic, Image based on Kim paper linked below." width="25%" />
+---
+title: "A Compiler for the Reservoir Computer"
+output:
+  html_document:
+    toc: true
+    toc_depth: 2
+    toc_float:
+      collapsed: true
+---
+
+<div style="text-align: center;">
+  <img src="rnn.svg" alt="RNN Graphic, Image based on Kim paper linked below." style="width: 50%;" />
+</div>
 
 Working towards a compiler to express high-level code in RNNs. Currently building a framework for programming RNNs based on Jason [Kim's method](https://www.nature.com/articles/s42256-023-00668-8).
 
