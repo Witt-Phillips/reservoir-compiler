@@ -1,13 +1,3 @@
----
-title: "A Compiler for the Reservoir Computer"
-output:
-  html_document:
-    toc: true
-    toc_depth: 2
-    toc_float:
-      collapsed: true
----
-
 <div style="text-align: center;">
   <img src="rnn.svg" alt="RNN Graphic, Image based on Kim paper linked below." style="width: 50%;" />
 </div>
