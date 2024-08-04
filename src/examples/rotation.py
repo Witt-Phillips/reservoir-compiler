@@ -24,5 +24,3 @@ input_data = inputs.lorenz(5000)
 outputs = rotation_res.run4input(input_data)
 plotters.threeDInputOutput(input_data, outputs, 'Rotation')
 
-#plotters.threeD(input_data, 'Lorenz Attractor')
-
