@@ -1,4 +1,4 @@
-![RNN Graphic, Image based on Kim paper linked below.](rnn.svg)
+<img src="rnn.svg" alt="RNN Graphic, Image based on Kim paper linked below." width="25%" />
 
 Working towards a compiler to express high-level code in RNNs. Currently building a framework for programming RNNs based on Jason [Kim's method](https://www.nature.com/articles/s42256-023-00668-8).
 
