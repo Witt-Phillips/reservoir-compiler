@@ -1,8 +1,0 @@
-[package]
-name = "prnn_boolean_example"
-version = "0.1.0"
-edition = "2021"
-
-[dependencies]
-ode_solvers = "0.4.x"
-nalgebra = "0.32.x"
