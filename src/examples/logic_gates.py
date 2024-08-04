@@ -5,7 +5,7 @@ sys.path.append(parent_dir)
 
 import sympy as sp
 from reservoir import *
-from prnn_method import prnn_method
+from prnn import solve
 from utils import inputs, plotters
 
 verbose = False

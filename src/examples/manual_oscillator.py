@@ -5,7 +5,7 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 from reservoir import *
-from prnn_method import circuit, prnn_method
+from prnn import circuit, solve
 from utils import inputs, plotters
 import numpy as np
 

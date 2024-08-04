@@ -188,7 +188,7 @@ class Reservoir:
         x_init = np.zeros((input_dim, 1))
         return Reservoir(A, B, r_init, x_init, global_timescale, gamma)
 
-    # implemented in prnn_method.py
+    # implemented in prnn.py
     def solve(self, sym_eqs, inputs=None, verbose: bool = False) -> np.ndarray:
         pass
     

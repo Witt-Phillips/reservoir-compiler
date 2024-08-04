@@ -1,6 +1,6 @@
 from reservoir import *
 import sympy as sp
-from prnn_method import equations
+from prnn import equations
 from utils import inputs
 
 o1, o2, o3, s1, s2, s3 = sp.symbols('o1 o2 o3 s1 s2 s3')

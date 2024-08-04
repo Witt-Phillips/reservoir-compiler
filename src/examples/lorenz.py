@@ -3,9 +3,13 @@ import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
+""" 
+WORK IN PROGRESS...
+ """
+
 import sympy as sp
 from reservoir import *
-from prnn_method import circuit, prnn_method
+from prnn import circuit, solve
 from utils import inputs, plotters
 
 o1, o2, o3 = sp.symbols('o1 o2 o3')

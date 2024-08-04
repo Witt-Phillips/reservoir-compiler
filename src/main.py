@@ -1,6 +1,6 @@
 import sympy as sp
 from reservoir import *
-from prnn_method import circuit, prnn_method
+from prnn import circuit, solve
 from utils import inputs, plotters
 
 def main():

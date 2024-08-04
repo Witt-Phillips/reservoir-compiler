@@ -4,7 +4,7 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 from reservoir import *
-from prnn_method import circuit
+from prnn import circuit
 from utils import plotters, inputs
 
 # Circuit configuration and generation.

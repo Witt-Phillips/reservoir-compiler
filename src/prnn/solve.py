@@ -1,3 +1,8 @@
+"""
+Given equations, solves for a reservoir which approximates the system.
+* Calls matlab engine to run prnn; see src/prnn/matlab_scripts/runMethod.m for details
+"""
+
 # add reservoir.py to import path
 import sys
 import os
@@ -19,10 +24,9 @@ def solve(self: Reservoir, sym_eqs, verbose: bool = False) -> np.ndarray:
     eng = matlab.engine.start_matlab()
     if verbose:
         print("* matlab engine started")
-    if 0:
-        eng.addpath(r'/Users/witt/all/cncl/compiler/src/matlab_dependencies', nargout=0)
-        eng.addpath(r'/Users/witt/all/cncl/compiler/src/prnn_method/matlab_scripts', nargout=0)
-    eng.cd(r'/Users/witt/all/cncl/compiler/src/prnn_method/matlab_scripts', nargout=0)
+ 
+    eng.addpath(r'/Users/witt/all/cncl/compiler/src/matlab_dependencies', nargout=0)
+    eng.cd(r'/Users/witt/all/cncl/compiler/src/matlab_dependencies', nargout=0)
     if verbose:
         print("* added scripts to matlab path")
     

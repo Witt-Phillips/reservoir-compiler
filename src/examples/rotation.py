@@ -5,7 +5,7 @@ sys.path.append(parent_dir)
 
 import sympy as sp
 from reservoir import *
-from prnn_method import circuit, prnn_method
+from prnn import circuit, solve
 from utils import inputs, plotters
 
 #TODO: Make 'x#' valid symbol name for sympy eqs
