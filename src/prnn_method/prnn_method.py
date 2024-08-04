@@ -9,19 +9,13 @@ import numpy as np
 from typing import List
 import sympy as sp
 import matlab.engine
+from utils import utils
 
 # assumes sym_eqs are passed as an array of sympy equations
 def solve(self: Reservoir, sym_eqs, verbose: bool = False) -> np.ndarray:
     print("Solving for reservoir. This may take a moment!")
 
-    if verbose:
-        print("running reservoir...")
-
-    # reservoir dims
-    n = self.A.shape[0]
-    m = self.B.shape[1]
-
-    # start and configure matlab engine to run decompilation script
+    # start and configure matlab engine
     eng = matlab.engine.start_matlab()
     if verbose:
         print("* matlab engine started")
@@ -32,15 +26,18 @@ def solve(self: Reservoir, sym_eqs, verbose: bool = False) -> np.ndarray:
     if verbose:
         print("* added scripts to matlab path")
     
-    # convert reservoir, inputs, and equations to matlab format
+    # convert to matlab format, run
     A, B, r_init, x_init, global_timescale, gamma = self.py2mat()
-    
     matlab_eqs = [sp.octave_code(eq) for eq in sym_eqs]
-
-    # run matlab script
-    A, B, r_init, x_init, global_timescale, gamma, d, W = eng.runMethod(A, B, r_init, x_init, global_timescale, gamma, matlab_eqs, verbose, nargout=8) # add nargout=0 if ignoring output  
+    A, B, r_init, x_init, d, O, R = eng.runMethod(A, B, r_init, x_init, global_timescale, gamma, matlab_eqs, verbose, nargout=7) # add nargout=0 if ignoring output      
     eng.quit()
 
-    return Reservoir.mat2py(A, B, r_init, x_init, global_timescale, gamma, d, W)
+    # solve for W
+    O = np.array(O, dtype=float)
+    R = np.array(R, dtype=float)
+    W, _, _, _ = np.linalg.lstsq(R.T, O.T)
+    W = W.T
+
+    return Reservoir.mat2py(A, B, r_init, x_init, self.global_timescale, self.gamma, d, W)
 
 Reservoir.solve = solve

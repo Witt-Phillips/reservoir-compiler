@@ -13,6 +13,8 @@ xs = zeros(m,1);
 ot = ones(2,1000,4);
 pt_logic = cat(2,[-.1;-.1].*ot,[-.1;.1].*ot,[.1;-.1].*ot,[.1;.1].*ot);
 
+lorenz_inputs = zeros(1, 5000, 4);
+
 %eqs = {'o1 == -123.076923076923*o1.^3 + 0.230769230769231*o1 + 5.0*(s1 + 0.1).*(-s2 - 0.1) + 0.1'};
 nand_eq = {
     'o1 == -123.076923076923*o1.^3 + 0.230769230769231*o1 + 5.0*(s1 + 0.1).*(-s2 - 0.1) + 0.1'
@@ -24,9 +26,16 @@ rotation_eqs = {
     'o3 == s3'
 };
 
+lorenz_eqs = {
+    'o1 == -10*o1 + 10*o2';
+    'o2 == o1.*(28 - o3) - o2';
+    'o3 == o1.*o2 - 2.66666666666667*o3'
+};
 
 verbose = false;
-[A, B, rs, xs, dt, gam, d, W] = runMethod(A, B, rs, xs, dt, gam, nand_eq, verbose);
+[A, B, rs, xs, d, O, R] = runMethod(A, B, rs, xs, dt, gam, nand_eq, verbose);
+W = lsqminnorm(R', O')';
+
 
 reservoir = ReservoirTanhB(A, B , rs, xs, dt, gam);
 reservoir.d = d;

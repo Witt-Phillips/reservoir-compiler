@@ -4,9 +4,6 @@ from mpl_toolkits.mplot3d import Axes3D
 import numpy as np    
 
 def InOutSplit(inputs, outputs, title):
-    if inputs.shape[2] > 1:
-        inputs = inputs[:, :, 0]
-        print("warning: plot: inputs must be 2D, taking first z-axis")
 
     if inputs.shape[1] != outputs.shape[1]:
         raise ValueError("plot: inputs and outputs must have equal length.")

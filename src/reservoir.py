@@ -59,14 +59,9 @@ class Reservoir:
         if W is None:
             return ValueError("run4input: W must be defined, either by argument or in reservoir object")
 
-        if verbose:
-            print("Running for input...")
-
         # Ensure inputs are 4 dimensinoal on z axis
-        if inputs.shape[2] == 1:
-            inputs = np.repeat(inputs, 4, axis=2)
-        elif inputs.shape[2] != 4:
-            raise ValueError("inputs must be 4 dimensional on z axis")
+        inputs = inputs.reshape(inputs.shape[0], inputs.shape[1], 1)
+        inputs = np.repeat(inputs, 4, axis=2)
 
         nInd = 0
         nx = inputs.shape[1]

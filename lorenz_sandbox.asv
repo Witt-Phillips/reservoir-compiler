@@ -1,0 +1,8 @@
+time = 5000;
+x_init = [28; 10; 8/3];
+
+lorenz = LorenzZ(x_, .1, [28, 10, 8/3]);
+X = lorenz.propagate(time);
+
+plot(1:time, X)
+

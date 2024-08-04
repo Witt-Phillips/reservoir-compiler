@@ -18,6 +18,8 @@ logic_eqs = [
 ]
 
 rotation_res = Reservoir.solveReservoir(logic_eqs)
+rotation_res: Reservoir
+
 input_data = inputs.lorenz(5000)
 outputs = rotation_res.run4input(input_data)
 plotters.threeDInputOutput(input_data, outputs, 'Rotation')

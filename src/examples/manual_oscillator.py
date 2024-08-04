@@ -44,7 +44,7 @@ W = nand_res.W
 
 # Run for no input.
 time = 7000
-input_data = np.zeros((1, time, 4))
+input_data = inputs.zeros(time)
 radp = RAD.run4input(input_data, np.identity(3*n))
 
 # Find o=Wr

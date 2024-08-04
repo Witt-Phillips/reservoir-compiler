@@ -5,7 +5,7 @@ sys.path.append(parent_dir)
 
 from reservoir import *
 from prnn_method import circuit
-from utils import plotters
+from utils import plotters, inputs
 
 # Circuit configuration and generation.
 nand: Reservoir = Reservoir.loadFile("nand")
@@ -31,8 +31,8 @@ circuitRes = circuit.connect(oscillator_circuit, [nand1, nand2, nand3])
 
 
 # Run for no input.
-time = 7000
-input_data = np.zeros((3, time, 4))
+time = 4000
+input_data = np.zeros((3, time))
 radp = circuitRes.run4input(input_data, np.identity(3*nand.A.shape[0])) # W = I to allow manual calculation below
 
 # Find o=Wr

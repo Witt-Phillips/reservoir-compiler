@@ -5,11 +5,10 @@ sys.path.append(parent_dir)
 
 import sympy as sp
 from reservoir import *
-from prnn_method import circuit, prnn_method
+from prnn_method import prnn_method
 from utils import inputs, plotters
 
 verbose = False
-# define symbolic equations (naming is not constrained) -----------------
 o1, s1, s2 = sp.symbols('o1 s1 s2')
 
 # parameters and pitchfork base
@@ -34,7 +33,7 @@ logic_eqs = [
     sp.Eq(o1, 0.1 * (pitchfork_bifurcation + logic[currentlyRunning]))
 ]
 
-logic_inputs = inputs.high_low_inputs(1000)
+logic_inputs = inputs.high_low_inputs(4000)
 reservoir = Reservoir.solveReservoir(logic_eqs)
 
 reservoir: Reservoir
@@ -46,12 +45,10 @@ if verbose:
 
 # run network forward
 outputs = reservoir.run4input(logic_inputs)
-print(outputs.shape)
 plotters.InOutSplit(logic_inputs, outputs, currentlyRunning + " Gate")
 
 # save preset
 if 0:
     reservoir.saveFile(currentlyRunning)  
-    # validate
     res = Reservoir.loadFile(currentlyRunning)
     res: Reservoir

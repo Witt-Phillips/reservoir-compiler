@@ -1,4 +1,4 @@
-function [A, B, rs, xs, dt, gam, d, W] = runMethod(A, B, rs, xs, dt, gam, sym_eqs, verbose)
+function [A, B, rs, xs, d, OdNPL, RdNPL] = runMethod(A, B, rs, xs, dt, gam, sym_eqs, verbose)
 %% Initialize reservoir
 rng(0);  
 m = size(xs, 1);
@@ -42,6 +42,7 @@ end
 
 % Shift basis
 pr = primes(2000)'; pr = pr(1:m);
+
 %[~,DX] = sym2deriv(input_vector,my_x,pr,Pd1,PdS);
 DX = compile(input_vector, my_x, pr, Pd1);
 % Finish generating basis
@@ -50,11 +51,8 @@ Aa(:,(1:m)+1)  = Aa(:,(1:m)+1)+B;
 Aa(:,1) = Aa(:,1) + d;
 RdNPL = gen_basis(Aa,PdS);
 
-% Compile
-o = zeros(length(output_eqs),size(C1,2)); % Create the o matrix as zeros
-%oS = zeros(size(DX, 1), size(DX, 2));
-%o(1,m+1) = 1; % set recurrent variables to one. Here, we take "1" x3 (see
-%Pd1 for why)
+% Put 1s at reccurent inputs
+o = zeros(length(output_eqs),size(C1,2));
 for i = 1:length(recurrences)
     % get input & output #
     recurrence = recurrences{i};
@@ -64,16 +62,9 @@ for i = 1:length(recurrences)
         inputIndex = str2double(tokens{1}{2});  % x3 -> 3
     end
     o(outputIndex, 1 + inputIndex) = 1;
-    %oS = [oS; DX(inputIndex, :)];
 end
 
-%oS = DX(1,:); % should be taking from all reccurent inputs.
-
-OdNPL = o + DX; % combines o and oS. Why divide by gam??
-% Hacky Partial Sol'n for Lorenz
-% OdNPL(2, 2) = 1;
-% OdNPL(1, 3) = -1;
-% OdNPL(3, 4) = 1;
+OdNPL = o + DX;
 W = lsqminnorm(RdNPL', OdNPL')';
 
 % Test for compilation accuracy
@@ -103,7 +94,6 @@ for i = 1:length(recurrences)
         extB(:, inputIndex) = [];
         new_x(inputIndex) = [];
     end
-    
 end
 
 RP = ReservoirTanhB(reccA,extB,rs, new_x,dt,gam);
