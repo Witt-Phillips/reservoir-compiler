@@ -31,7 +31,7 @@ logic = {
 
 currentlyRunning = 'nand'
 logic_eqs = [
-    sp.Eq(o1, pitchfork_bifurcation + logic[currentlyRunning])
+    sp.Eq(o1, 0.1 * (pitchfork_bifurcation + logic[currentlyRunning]))
 ]
 
 logic_inputs = inputs.high_low_inputs(1000)

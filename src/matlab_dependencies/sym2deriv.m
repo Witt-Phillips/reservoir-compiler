@@ -28,14 +28,15 @@ for i = 1:length(dx)
     DX(i,ai) = a;
 end
 
-% Obtain the full map
+% Obtain the full map TODO: what is GAM here? (thinking Jacobian?)
 GAM = zeros(length(pri));
-for i = 2:size(Pd1,1)
-    p = Pd1(i,:); pi = find(p);
-    for j = 1:length(pi)
+for i = 2:size(Pd1,1) % for every partial derivative combination
+    p = Pd1(i,:); pi = find(p); % p = ith row in p, find gets nonzero elements
+    for j = 1:length(pi) %
         ps = p; 
-        ps(pi(j)) = ps(pi(j))-1; 
-        pd = PdS(pri-prod(pr'.^ps)==0,:); pdi = find(pd); pd = pd(pdi);
+        ps(pi(j)) = ps(pi(j))-1; % decrement each nonzero value by 1
+        pd = PdS(-prod(pr'.^ps)==0,:); 
+        pdi = find(pd); pd = pd(pdi);
         GAM(i,pd) = GAM(i,pd) + p(pi(j))*DX(pi(j),pdi);
     end
 end

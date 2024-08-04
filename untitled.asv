@@ -1,0 +1,14 @@
+function O = compile(sym_eqs, Pd1, gam)
+    O = zeros(length(sym_eqs), size(Pd1, 1));
+    for i = 1:length(sym_eqs)
+        % unpack sym eq
+        [coeffs, syms] = coeffs(dx(i));
+        coeffs = double(coeffs);
+        
+        % find the index of sym equivalent in Pd1
+        coeff_col = 1; % placehlder
+
+        % insert coeff at
+        
+    end
+end
