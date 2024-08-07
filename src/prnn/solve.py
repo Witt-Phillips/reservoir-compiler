@@ -17,7 +17,7 @@ import matlab.engine
 from utils import utils
 
 # assumes sym_eqs are passed as an array of sympy equations
-def solve(self: Reservoir, sym_eqs, verbose: bool = False) -> np.ndarray:
+def solve_self(self: Reservoir, sym_eqs, verbose: bool = False) -> Reservoir:
     print("Solving for reservoir. This may take a moment!")
 
     # start and configure matlab engine
@@ -44,4 +44,4 @@ def solve(self: Reservoir, sym_eqs, verbose: bool = False) -> np.ndarray:
 
     return Reservoir.mat2py(A, B, r_init, x_init, self.global_timescale, self.gamma, d, W)
 
-Reservoir.solve = solve
+Reservoir.solve_self = solve_self

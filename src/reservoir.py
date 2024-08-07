@@ -15,22 +15,23 @@ Reservoir Structure:
 * B: n x k
 * W: m x n
 """
+
 class Reservoir:
     def __init__(self, A, B, r_init, x_init, global_timescale=0.1, gamma=100, d=None, W=None):
-        self.A = A
-        self.B = B
-        self.r_init = r_init if r_init is not None else np.zeros((A.shape[0], 1))
-        self.r = np.zeros((A.shape[0], 1))
-        self.x_init = x_init
-        self.global_timescale = global_timescale
-        self.gamma = gamma
+        self.A: np.ndarray = A
+        self.B: np.ndarray = B
+        self.r_init: np.ndarray = r_init if r_init is not None else np.zeros((A.shape[0], 1))
+        self.r: np.ndarray = np.zeros((A.shape[0], 1))
+        self.x_init: np.ndarray = x_init
+        self.global_timescale: float = global_timescale
+        self.gamma: float = gamma
+        
         self.d = d if d is not None else np.arctanh(self.r_init) - (self.A @ self.r_init) - (self.B @ self.x_init) if r_init is not None else np.zeros((A.shape[0], 1))
-
         self.W = W
 
         # for circuitry
-        self.usedInputs = []
-        self.usedOutputs = []
+        self.usedInputs = set()
+        self.usedOutputs = set()
 
     def copy(self):
         return Reservoir(self.A, self.B, self.r_init, self.x_init, self.global_timescale, self.gamma, self.d, self.W)
@@ -117,8 +118,7 @@ class Reservoir:
         if self.W is not None:
             print("W: ", self.W.shape)
 
-    def saveFile(self, filename):
-        directory = "./src/presets"
+    def save(self, filename, directory="./src/presets"):
         
         # check dir exists
         if not os.path.exists(directory):
@@ -132,10 +132,15 @@ class Reservoir:
         filepath = os.path.join(directory, f"{filename}.rsvr")
         with open(filepath, "wb") as f:
             pkl.dump(self, f)
+        
+        if os.path.isfile(filepath):
+            print("save: created", filepath)
+        else:
+            raise FileNotFoundError("error: save: dumped file, then couldn't find it")
+
     
     @classmethod
-    def loadFile(cls, filename):
-        directory = "./src/presets"
+    def load(cls, filename, directory= "./src/presets"):
         filepath = os.path.join(directory, f"{filename}.rsvr")
         
         # check dir exists
@@ -188,13 +193,13 @@ class Reservoir:
         x_init = np.zeros((input_dim, 1))
         return Reservoir(A, B, r_init, x_init, global_timescale, gamma)
 
-    # implemented in prnn.py
-    def solve(self, sym_eqs, inputs=None, verbose: bool = False) -> np.ndarray:
+    # implemented in prnn/solve.py
+    def solve_self(self, sym_eqs, inputs=None, verbose: bool = False) -> np.ndarray:
         pass
     
-    # runMethod variant -- generates baseRNN.
+    # static variant generates baseRNN
     @staticmethod
-    def solveReservoir(sym_eqs, verbose=False):
+    def solve(sym_eqs, verbose=False):
         # determine number of baseRNN inputs -- init latents at 10x inputs
         x = set()
         for eq in sym_eqs:
@@ -204,4 +209,14 @@ class Reservoir:
 
         #TODO how many latents -- parameter sweep? 
         baseRNN = Reservoir.gen_baseRNN(num_x * 10, num_x)
-        return baseRNN.solve(sym_eqs, verbose)
+        return baseRNN.solve_self(sym_eqs, verbose)
+
+
+    def doubleOutput(self, output_idx):
+        if output_idx <= 0 and output_idx > self.W.shape[0]:
+            return ValueError(f"invalid output; cannot double")
+        self.W = np.vstack((self.W, self.W[output_idx, :]))
+        return self
+
+            
+        

@@ -1,3 +1,5 @@
+# I've made the decision to internalize outputs used in circuits; otherwise, we'd have to specify exactly which outputs we wanted to read out. The tradeoff here is that we cannot readout any output required as an input to another reservoir. Fortunately, there's an easy fix: create a new exposed output when programming the reservoir! In practice, see reservoir.doubleOuput(), which is more efficient.
+
 import sys
 import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
@@ -9,7 +11,7 @@ from prnn import solve
 from utils import inputs, plotters
 
 verbose = False
-o1, s1, s2 = sp.symbols('o1 s1 s2')
+o1, o2, s1, s2 = sp.symbols('o1 o2 s1 s2')
 
 # parameters and pitchfork base
 xw = 0.025
@@ -31,12 +33,13 @@ logic = {
 currentlyRunning = 'nor'
 logic_eqs = [
     sp.Eq(o1, 0.1 * (pitchfork_bifurcation + logic[currentlyRunning])),
+    sp.Eq(o2, o1)
 ]
 
 logic_inputs = inputs.high_low_inputs(4000)
-reservoir = Reservoir.solve(logic_eqs)
-reservoir: Reservoir
+reservoir: Reservoir = Reservoir.solve(logic_eqs)
 
+# display octave code (matlab readable equations)
 if verbose:
     for eq in logic_eqs:
         print(sp.octave_code(eq))
@@ -47,5 +50,6 @@ plotters.InOutSplit(logic_inputs, outputs, currentlyRunning + " Gate")
 
 # save preset
 if 1:
-    reservoir.save(currentlyRunning)  
-    res = Reservoir.load(currentlyRunning)
+    reservoir.save(f"{currentlyRunning}_de")  
+    res = Reservoir.load(f"{currentlyRunning}_de")
+    res: Reservoir

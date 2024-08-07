@@ -1,9 +1,10 @@
 from reservoir import *
 import sympy as sp
-from prnn import equations
+from prnn import equations, compile
 from utils import inputs
 
-o1, o2, o3, s1, s2, s3 = sp.symbols('o1 o2 o3 s1 s2 s3')
+
+""" o1, o2, o3, s1, s2, s3 = sp.symbols('o1 o2 o3 s1 s2 s3')
 test_eqs = [
     sp.Eq(o1, -s2 + o1),
     sp.Eq(o2, o1 - s1),
@@ -16,4 +17,8 @@ if 0:
 eqs, recurrences = equations.process(test_eqs)
 
 print(eqs)
-print(recurrences)
+print(recurrences) """
+
+Pd1 = compile.partial_derivs(3, 3)
+print(Pd1)
+print(Pd1.shape)

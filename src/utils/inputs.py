@@ -40,7 +40,7 @@ def sr_inputs(time):
 def lorenz(time, dt=0.01):
     time -= 1
     x, y, z = np.zeros((3, time + 1))
-    x[0], y[0], z[0, :] = 0, 1, 1.05
+    x[0], y[0], z[0] = 0, 1, 1.05
 
     for i in range(time):
         dx, dy, dz = lorenz_engine(x[i], y[i], z[i])
