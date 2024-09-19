@@ -59,22 +59,24 @@ The `reservoir.solve()` method determines the appropriate dimensions for reservo
 
 ## Circuit Design
 
-To combine reservoirs into circuits, we use a simple, tuple-based language of the following format:
+To combine reservoirs into circuits, we use a simple, list-based language of the following format:
 
-`(Output Network, Output Number, Input Network, Input Number)`, which expresses the recurrency. `OutputNetwork.o[output_number] == InputNetwork.o[input_number]`.
+`[Output Network, Output Number, Input Network, Input Number]`, which expresses the recurrency. `OutputNetwork.o[output_number] == InputNetwork.o[input_number]`.
 
 The `circuit.connect()` method takes a list of these tuples and returns a reservoir that implements the programmed circuit.
 
 ### Signal vs. Internal Inputs/ Outputs
-Much like the internalization of recurrencies in the PRNN programming example, the  circuit programming method recognizinges which inputs/ outputs of the orignial system remain exposed to the user after connecting the circuit.
+
+Much like the internalization of recurrencies in the PRNN programming example, the circuit programming method recognizinges which inputs/ outputs of the orignial system remain exposed to the user after connecting the circuit.
 
 Note that while a single output can be proted inot multipl inputs, teh connect() method is constrained in that multiple outputs cannot be set equal to a single input. While we can use outputs multiple times, the circuit method internalizes (removes from output vector of final reservoir) any output that has been routed to at least one input.
 
 ### Tip: Expose internal inputs by 'doubling' an output
+
 The circuit language is designed such that outputs which feed into inputs of other matrices are not considered outputs of the completed circuit reservoir. Of course, we may need to read out these 'internal' outputs. Doing so is simple: just define another output and set it equal to the internalized output: `o2 = o1`, for example.
 
 Alternatively (and more efficiently), use the reservoir.doubleOutput(n) method, which appends a copy of the nth row of W to the existing reservoir.
 
 ## Presets
 
-Solving for reservoirs remains computationally expensive. To avoid recalcuation of reused reservoirs, the reservoir.save() and corresponding reservoir.load() methods allow storage in a .rsvr file. 
+Solving for reservoirs remains computationally expensive. To avoid recalcuation of reused reservoirs, the reservoir.save() and corresponding reservoir.load() methods allow storage in a .rsvr file.

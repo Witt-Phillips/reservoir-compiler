@@ -10,23 +10,24 @@ from utils import inputs, plotters
 
 o1, o2, o3 = sp.symbols('o1 o2 o3')
 
-lorenz_eqs = [
-    sp.Eq(o1, o2 - o1),
-    sp.Eq(o2, 1/10*o1 - 1/10*o2 - 20*o1*o3),
-    sp.Eq(o3, 20*o1*o2 - 4/15*o3 - 0.036)
+rossler_eqs = [
+    sp.Eq(o1, (-5*o2) - (5 * o3) - 3),
+    sp.Eq(o2, (5 * o1) + o2),
+    sp.Eq(o3, ((250/3) * o1 * o3) + (50*o1) - (28.5*o3) - 17.04)
 ]
 
 time = 5000
-lorenz_inputs = inputs.zeros(time)
+rossler_inputs = inputs.zeros(time)
 
-reservoir: Reservoir = Reservoir.solve(lorenz_eqs)
+reservoir = Reservoir.solve(rossler_eqs)
+reservoir: Reservoir
 
-outputs = reservoir.run4input(lorenz_inputs)
-plotters.threeD(outputs, "Lorenz Attractor")
+outputs = reservoir.run4input(rossler_inputs)
+plotters.threeD(outputs, "Rossler Attractor")
 
 # save preset
 if 0:
-    name = "lorenz"
+    name = "rossler"
     reservoir.save(name)  
     res = Reservoir.load(name)
     res: Reservoir

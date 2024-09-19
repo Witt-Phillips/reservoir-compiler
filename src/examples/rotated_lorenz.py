@@ -11,6 +11,7 @@ rotation_res: Reservoir = Reservoir.load("rotation90")
 lorenz_res: Reservoir =   Reservoir.load("lorenz")
 
 rotated_lorenz_res = Circuit(
+    # output matrix, o#, rotation input, i#
     [[lorenz_res, 0, rotation_res, 0],
     [lorenz_res, 1, rotation_res, 1],
     [lorenz_res, 2, rotation_res, 2]],

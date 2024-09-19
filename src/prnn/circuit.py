@@ -151,10 +151,20 @@ class Circuit:
 
         return Reservoir(combA, B, r_init, x_init, .001, 100, d, W)
 
-
 def validate2reservoirs(config) -> list[Reservoir]:
     reservoirs = set()
     for connection in config:
+        if len(connection) != 4:
+            raise ValueError("Each connection must have 4 elements: [reservoir1, output_index, reservoir2, input_index]")
+        if not isinstance(connection[0], Reservoir):
+            raise ValueError("Each connection must have a reservoir as the first element")
+        if not isinstance(connection[2], Reservoir):
+            raise ValueError("Each connection must have a reservoir as the third element")
+        if not isinstance(connection[1], int):
+            raise ValueError("Each connection must have an integer as the second element")
+        if not isinstance(connection[3], int):
+            raise ValueError("Each connection must have an integer as the fourth element")
+        
         reservoirs.add(connection[0])
         reservoirs.add(connection[2])
 

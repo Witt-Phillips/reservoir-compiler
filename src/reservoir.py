@@ -25,7 +25,7 @@ class Reservoir:
         self.x_init: np.ndarray = x_init
         self.global_timescale: float = global_timescale
         self.gamma: float = gamma
-        
+
         self.d = d if d is not None else np.arctanh(self.r_init) - (self.A @ self.r_init) - (self.B @ self.x_init) if r_init is not None else np.zeros((A.shape[0], 1))
         self.W = W
 
@@ -209,6 +209,8 @@ class Reservoir:
 
         #TODO how many latents -- parameter sweep? 
         baseRNN = Reservoir.gen_baseRNN(num_x * 10, num_x)
+        #baseRNN = Reservoir.gen_baseRNN(1000, num_x)
+
         return baseRNN.solve_self(sym_eqs, verbose)
 
 

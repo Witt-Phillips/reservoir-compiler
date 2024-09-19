@@ -12,6 +12,3 @@ def partial_derivs(variables, max_order):
                 count[index] += 1
             combinations.append(count)
     return np.array(combinations)
-
-
-# problem is how many combinations of the three inputs exist?
