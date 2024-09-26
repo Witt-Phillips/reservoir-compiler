@@ -2,3 +2,6 @@ prnn_venv/
 .DS_Store
 .vscode
 graveyard/
+src/__pycache__
+src/ir/sandbox.py
+src/sandbox.py
