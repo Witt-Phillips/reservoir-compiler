@@ -5,7 +5,7 @@ parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
 import numpy as np
-from reservoir import Reservoir
+from prnn.reservoir import Reservoir
 
 def internalize_recurrences(r: Reservoir, recurrences):
     n = r.A.shape[1]

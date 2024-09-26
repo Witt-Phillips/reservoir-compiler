@@ -1,13 +1,5 @@
-# add reservoir.py to import path
-import sys
-import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
+from examples.imports import Reservoir, solve, inputs, plotters, sp
 
-from reservoir import *
-from prnn import solve
-from utils import inputs, plotters
-import numpy as np
 
 # define symbolic equations (naming is not constrained) -----------------
 nand_res: Reservoir = Reservoir.loadFile("nand")

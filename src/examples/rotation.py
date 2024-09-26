@@ -1,12 +1,4 @@
-import sys
-import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
-
-import sympy as sp
-from reservoir import *
-from prnn import circuit, solve
-from utils import inputs, plotters
+from examples.imports import Reservoir, solve, inputs, plotters, sp
 
 #TODO: Make 'x#' valid symbol name for sympy eqs
 o1, o2, o3, s1, s2, s3 = sp.symbols('o1 o2 o3 s1 s2 s3')
@@ -24,7 +16,7 @@ input_data = inputs.lorenz(5000)
 outputs = rotation_res.run4input(input_data)
 plotters.threeDInputOutput(input_data, outputs, 'Rotation')
 
-if 0:
+if 1:
     rotation_res.save("rotation90")  
 
 

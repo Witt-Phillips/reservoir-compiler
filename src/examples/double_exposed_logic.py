@@ -1,14 +1,4 @@
-# I've made the decision to internalize outputs used in circuits; otherwise, we'd have to specify exactly which outputs we wanted to read out. The tradeoff here is that we cannot readout any output required as an input to another reservoir. Fortunately, there's an easy fix: create a new exposed output when programming the reservoir! In practice, see reservoir.doubleOuput(), which is more efficient.
-
-import sys
-import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
-
-import sympy as sp
-from reservoir import *
-from prnn import solve
-from utils import inputs, plotters
+from examples.imports import Reservoir, solve, inputs, plotters, sp
 
 verbose = False
 o1, o2, s1, s2 = sp.symbols('o1 o2 s1 s2')

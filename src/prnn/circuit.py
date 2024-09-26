@@ -1,5 +1,5 @@
 import numpy as np
-from reservoir import Reservoir
+from prnn.reservoir import Reservoir
 
 class Circuit:
     def __init__(self, 

@@ -1,5 +1,5 @@
 import sympy as sp
-from reservoir import *
+from prnn.reservoir import *
 from prnn import circuit, solve
 from utils import inputs, plotters
 

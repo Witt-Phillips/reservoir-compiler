@@ -1,12 +1,4 @@
-import sys
-import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
-
-import sympy as sp
-from reservoir import *
-from prnn import circuit, solve
-from utils import inputs, plotters
+from examples.imports import Reservoir, solve, inputs, plotters, sp
 
 o1, o2, o3 = sp.symbols('o1 o2 o3')
 

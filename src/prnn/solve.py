@@ -9,7 +9,7 @@ import os
 parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
 sys.path.append(parent_dir)
 
-from reservoir import *
+from prnn.reservoir import *
 import numpy as np
 from typing import List
 import sympy as sp

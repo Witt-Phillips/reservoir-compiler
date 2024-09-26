@@ -1,11 +1,6 @@
-import sys
-import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
+from examples.imports import Reservoir, solve, inputs, plotters, sp
+from prnn.circuit import Circuit
 
-from reservoir import Reservoir
-from prnn.circuit import Circuit 
-from utils import inputs, plotters
 
 rotation_res: Reservoir = Reservoir.load("rotation90")
 lorenz_res: Reservoir =   Reservoir.load("lorenz")

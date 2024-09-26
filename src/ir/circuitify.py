@@ -2,7 +2,7 @@ import sys
 sys.path.append("/Users/witt/all/cncl/compiler/src")
 
 from lang import *
-from reservoir import Reservoir
+from prnn.reservoir import Reservoir
 from prnn.circuit import Circuit
 from fn_library import rnn_lib
 from typing import Optional, Union

@@ -1,11 +1,5 @@
-import sys
-import os
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(parent_dir)
-
-from reservoir import *
+from examples.imports import Reservoir, solve, inputs, plotters, sp
 from prnn.circuit import Circuit
-from utils import plotters, inputs
 
 # Circuit configuration and generation.
 nand1: Reservoir = Reservoir.load("nand").doubleOutput(0) # creates exposed outputs on each nand
