@@ -43,7 +43,7 @@ oscillator = Prog([
 ])
 
 
-res = prog2circuit(oscillator)
+res = prog2circuit(lorenz)
 if prog2circuit is None:
     ValueError("could not construct valid reservoir from code")
 
