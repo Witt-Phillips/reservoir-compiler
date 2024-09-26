@@ -5,9 +5,10 @@ class Circuit:
     def __init__(self, 
                  config, 
                  readouts = None, 
-                 preserve_reservoirs = False):
+                 preserve_reservoirs = False,
+                 reservoirs=None):
         self.config = config
-        self.reservoirs = validate2reservoirs(config)
+        self.reservoirs = reservoirs if reservoirs is not None else validate2reservoirs(config)
         self.readouts = readouts       
 
         # copy reservoirs to avoid overwrites
@@ -22,9 +23,19 @@ class Circuit:
                             connection[0] = copied_res
                         if connection[2] == reservoir:
                             connection[2] = copied_res
-                self.reservoirs = new_reservoirs
-
+                self.reservoirs = new_reservoirs        
+        
     def connect(self) -> Reservoir:
+        # If there are reservoirs, return the first one
+        if not self.config:
+            l = len(self.reservoirs)
+            if l == 1:
+                return next(iter(self.reservoirs))
+            elif l > 1:
+                raise ValueError("Multiple reservoirs exist but config is empty. Cannot determine which reservoir to return.")
+            else:
+                raise ValueError("No reservoirs available to connect.")
+
         # circuit components
         dimA = sum(res.A.shape[0] for res in self.reservoirs)
         combA = np.zeros((dimA, dimA)) #TODO combA
@@ -144,10 +155,10 @@ class Circuit:
             if not removed:
                 i = i + 1
 
-        if self.readouts is not None:
-            for i in range(W.shape[0]):
-                if i not in self.readouts:
-                    W = np.delete(W, i, axis=0)
+        # if self.readouts is not None:
+        #     for i in range(W.shape[0]):
+        #         if i not in self.readouts:
+        #             W = np.delete(W, i, axis=0)
 
         return Reservoir(combA, B, r_init, x_init, .001, 100, d, W)
 

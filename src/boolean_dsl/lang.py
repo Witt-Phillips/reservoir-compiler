@@ -1,35 +1,25 @@
-from enum import Enum
+from enum import Enum, auto
+from typing import List, Union
 from dataclasses import dataclass
-from typing import List, Union, Dict, Tuple
-from fn_library import *
 
-class Op(Enum):
-    AND = "AND"
-    NAND = "NAND"
-    OR = "OR"
-    NOR = "NOR"
-    XOR = "XOR"
-    XNOR = "XNOR"
-    LET = "LET"
-    RET = "RET"
-
-# Map Op to corresponding functions
-op_funcs = {
-    Op.AND: AND,
-    Op.NAND: NAND,
-    Op.OR: OR,
-    Op.NOR: NOR,
-    Op.XOR: XOR,
-    Op.XNOR: XNOR,
-}
-
-Operand = Union[bool, str, 'Expr']
+class Opc(Enum):
+    LET = auto()
+    RET = auto()
+    INPUT = auto()
+    REC = auto()
 
 @dataclass
+class Operand:
+    Union[list[str], str, 'Expr']
+
+# Define Expressions and Program
+@dataclass
 class Expr:
-    opcode: Op
+    op: Union[Opc, str] #op for special cases, str for gates
     operands: List[Operand]
 
 @dataclass
 class Prog:
     exprs: List[Expr]
+
+

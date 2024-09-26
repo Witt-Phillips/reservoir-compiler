@@ -25,7 +25,7 @@ class Reservoir:
         self.x_init: np.ndarray = x_init
         self.global_timescale: float = global_timescale
         self.gamma: float = gamma
-
+    
         self.d = d if d is not None else np.arctanh(self.r_init) - (self.A @ self.r_init) - (self.B @ self.x_init) if r_init is not None else np.zeros((A.shape[0], 1))
         self.W = W
 
@@ -34,7 +34,11 @@ class Reservoir:
         self.usedOutputs = set()
 
     def copy(self):
-        return Reservoir(self.A, self.B, self.r_init, self.x_init, self.global_timescale, self.gamma, self.d, self.W)
+        # Ensure that usedOutputs and usedInputs are copied as sets
+        copied_res = Reservoir(self.A, self.B, self.r_init, self.x_init, self.global_timescale, self.gamma, self.d, self.W)
+        copied_res.usedOutputs = set(self.usedOutputs)  # Properly copy the set
+        copied_res.usedInputs = set(self.usedInputs)    # Properly copy the set
+        return copied_res
     
     def del_r(self, r, x):
         # Ensure r and x are column vectors

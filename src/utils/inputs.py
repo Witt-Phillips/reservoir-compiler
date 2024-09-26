@@ -19,6 +19,28 @@ def high_low_inputs(time):
 
     return np.vstack((row1, row2))
 
+def high_low_inputs_3rows(time):
+    base_patterns = np.array([
+        [-0.1,  0.1, -0.1,  0.1],
+        [-0.1, -0.1,  0.1,  0.1]
+    ])
+
+    reps = time // 4
+    row1 = np.repeat(base_patterns[0], reps)
+    row2 = np.repeat(base_patterns[1], reps)
+
+    # ensure the number of columns = time
+    if len(row1) < time:
+        extra = time - len(row1)
+        row1 = np.concatenate((row1, np.tile(base_patterns[0], extra)[:extra]))
+        row2 = np.concatenate((row2, np.tile(base_patterns[1], extra)[:extra]))
+
+    # Copy the second row as the third row
+    row3 = np.copy(row2)
+
+    # Stack all three rows
+    return np.vstack((row1, row2, row3))
+
 def zeros(time):
     return np.zeros((1, time))
 
