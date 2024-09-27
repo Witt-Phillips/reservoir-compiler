@@ -18,8 +18,8 @@ def solve_self(self: Reservoir, sym_eqs, verbose: bool = False) -> Reservoir:
     if verbose:
         print("* matlab engine started")
 
-    eng.addpath(r"/Users/witt/all/cncl/compiler/src/matlab_dependencies", nargout=0)
-    eng.cd(r"/Users/witt/all/cncl/compiler/src/matlab_dependencies", nargout=0)
+    eng.addpath(r"src/prnn/matlab_dependencies", nargout=0)
+    eng.cd(r"src/prnn/matlab_dependencies", nargout=0)
     if verbose:
         print("* added scripts to matlab path")
 

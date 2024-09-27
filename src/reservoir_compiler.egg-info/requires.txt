@@ -2,3 +2,8 @@ matlabengine==24.1.2
 matplotlib==3.9.2
 numpy==2.1.1
 sympy==1.13.1
+
+[dev]
+pytest>=6.0
+pylint
+black

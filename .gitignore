@@ -1,6 +1,4 @@
 prnn_venv/
-.DS_Store
-src/.DS_Store
 .vscode
-graveyard/
-src/__pycache__
+**/.DS_Store
+**/__pycache__/

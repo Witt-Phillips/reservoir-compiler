@@ -1,10 +1,11 @@
 from setuptools import setup, find_packages
 
 setup(
-    name="prnn_compiler",
+    name="reservoir-compiler",
     version="0.1",
     packages=find_packages(where="src"),
     package_dir={"": "src"},
+    python_requires=">=3.11",  # could run on 3.10?
     install_requires=[
         "matlabengine==24.1.2",
         "matplotlib==3.9.2",
@@ -14,7 +15,8 @@ setup(
     extras_require={
         "dev": [
             "pytest>=6.0",
-            "pylint",
+            "pylint",  # linter
+            "black",  # formatter
         ],
     },
 )

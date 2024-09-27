@@ -1,0 +1,12 @@
+Metadata-Version: 2.1
+Name: reservoir-compiler
+Version: 0.1
+Requires-Python: >=3.11
+Requires-Dist: matlabengine==24.1.2
+Requires-Dist: matplotlib==3.9.2
+Requires-Dist: numpy==2.1.1
+Requires-Dist: sympy==1.13.1
+Provides-Extra: dev
+Requires-Dist: pytest>=6.0; extra == "dev"
+Requires-Dist: pylint; extra == "dev"
+Requires-Dist: black; extra == "dev"
