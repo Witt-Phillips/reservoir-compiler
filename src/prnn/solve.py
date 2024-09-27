@@ -3,19 +3,10 @@ Given equations, solves for a reservoir which approximates the system.
 * Calls matlab engine to run prnn; see src/prnn/matlab_scripts/runMethod.m for details
 """
 
-# add reservoir.py to import path
-import sys
-import os
-
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
-sys.path.append(parent_dir)
-
-from prnn.reservoir import *
 import numpy as np
-from typing import List
 import sympy as sp
 import matlab.engine
-from utils import utils
+from prnn.reservoir import *
 
 
 # assumes sym_eqs are passed as an array of sympy equations

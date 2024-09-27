@@ -1,8 +1,15 @@
+""" Circuit class and methods """
+
 import numpy as np
 from prnn.reservoir import Reservoir
 
 
 class Circuit:
+    """
+    Defines the Circuit type, which describes a graph of connected networks.
+    * circuit.connect() links a circuit object into a single reservoir
+    """
+
     def __init__(
         self, config, readouts=None, preserve_reservoirs=False, reservoirs=None
     ):
@@ -32,50 +39,49 @@ class Circuit:
             l = len(self.reservoirs)
             if l == 1:
                 return next(iter(self.reservoirs))
-            elif l > 1:
-                raise ValueError(
-                    "Multiple reservoirs exist but config is empty. Cannot determine which reservoir to return."
-                )
-            else:
-                raise ValueError("No reservoirs available to connect.")
+
+            raise ValueError(
+                "Invalid config/reservoirs combinations \
+                              passed to connect."
+            )
 
         # circuit components
-        dimA = sum(res.A.shape[0] for res in self.reservoirs)
-        combA = np.zeros((dimA, dimA))  # TODO combA
+        dim_a = sum(res.A.shape[0] for res in self.reservoirs)
+        comb_a = np.zeros((dim_a, dim_a))
 
         # put adjacencies on diagonal, note indices
         idx = 0
         reservoir_indices = {}
         for reservoir in self.reservoirs:
-            # puts A on diagonal
-            A = reservoir.A
-            size = A.shape[0]
+            # putsa on diagonal
+            a = reservoir.A
+            size = a.shape[0]
             reservoir_indices[reservoir] = idx
-            combA[idx : idx + size, idx : idx + size] = A
+            comb_a[idx : idx + size, idx : idx + size] = a
             idx += size
 
         for connection in self.config:
-            outputNet, a, inputNet, b = connection
-            outputNet: Reservoir
-            inputNet: Reservoir
+            output_net, a, input_net, b = connection
+            output_net: Reservoir
+            input_net: Reservoir
 
             # Internalize connection
-            W_row = outputNet.W[a - 1, :].reshape(1, -1)  # * r
-            B_col = inputNet.B[:, b - 1].reshape(-1, 1)
-            # A_section = B_col @ W_row
-            A_section = np.outer(B_col, W_row)
+            w_row = output_net.W[a - 1, :].reshape(1, -1)  # * r
+            b_col = input_net.B[:, b - 1].reshape(-1, 1)
+            # a_section = b_col @ w_row
+            a_section = np.outer(b_col, w_row)
 
             # keep track of internalized inputs/ outputs
-            outputNet.usedOutputs.add(a)  # TODO: make this a set!!
-            inputNet.usedInputs.add(b)
+            output_net.usedOutputs.add(a)  # TODO: make this a set!!
+            input_net.usedInputs.add(b)
 
-            # Insert into combA at correct position
-            output_idx = reservoir_indices[outputNet]
-            input_idx = reservoir_indices[inputNet]
-            A_rows, A_cols = A_section.shape
-            combA[
-                input_idx : input_idx + A_rows, output_idx : output_idx + A_cols
-            ] += A_section
+            # Insert into comb_a at correct position
+            output_idx = reservoir_indices[output_net]
+            input_idx = reservoir_indices[input_net]
+            a_rows, a_cols = a_section.shape
+            comb_a[
+                input_idx : input_idx + a_rows, output_idx : output_idx + a_cols
+            ] += a_section
 
         for reservoir in self.reservoirs:
             # delete used inputs
@@ -108,50 +114,50 @@ class Circuit:
         W = np.array([]).reshape(0, 0)
 
         # Track the current row and column indices for placing the next matrix
-        current_B_row = 0
-        current_B_col = 0
-        current_W_row = 0
-        current_W_col = 0
+        current_b_row = 0
+        current_b_col = 0
+        current_w_row = 0
+        current_w_col = 0
 
         for reservoir in self.reservoirs:
             reservoir: Reservoir
-            B_matrix = reservoir.B
-            W_matrix = reservoir.W
-            B_rows, B_cols = B_matrix.shape
-            W_rows, W_cols = W_matrix.shape
+            b_matrix = reservoir.B
+            w_matrix = reservoir.W
+            b_rows, b_cols = b_matrix.shape
+            w_rows, w_cols = w_matrix.shape
 
             # Determine new sizes for B and W
-            new_B_row_size = current_B_row + B_rows
-            new_B_col_size = current_B_col + B_cols
-            new_W_row_size = current_W_row + W_rows
-            new_W_col_size = current_W_col + W_cols
+            new_b_row_size = current_b_row + b_rows
+            new_b_col_size = current_b_col + b_cols
+            new_w_row_size = current_w_row + w_rows
+            new_w_col_size = current_w_col + w_cols
 
             # Resize the B and W arrays to accommodate the new matrices
             if B.size == 0:
-                B = np.zeros((new_B_row_size, new_B_col_size))
+                B = np.zeros((new_b_row_size, new_b_col_size))
             else:
-                B = np.pad(B, ((0, B_rows), (0, B_cols)), mode="constant")
+                B = np.pad(B, ((0, b_rows), (0, b_cols)), mode="constant")
 
             if W.size == 0:
-                W = np.zeros((new_W_row_size, new_W_col_size))
+                W = np.zeros((new_w_row_size, new_w_col_size))
             else:
-                W = np.pad(W, ((0, W_rows), (0, W_cols)), mode="constant")
+                W = np.pad(W, ((0, w_rows), (0, w_cols)), mode="constant")
 
             # Place the matrices B and W on their respective diagonals
             B[
-                current_B_row : current_B_row + B_rows,
-                current_B_col : current_B_col + B_cols,
-            ] = B_matrix
+                current_b_row : current_b_row + b_rows,
+                current_b_col : current_b_col + b_cols,
+            ] = b_matrix
             W[
-                current_W_row : current_W_row + W_rows,
-                current_W_col : current_W_col + W_cols,
-            ] = W_matrix
+                current_w_row : current_w_row + w_rows,
+                current_w_col : current_w_col + w_cols,
+            ] = w_matrix
 
             # Update current row and column indices for B and W
-            current_B_row += B_rows
-            current_B_col += B_cols
-            current_W_row += W_rows
-            current_W_col += W_cols
+            current_b_row += b_rows
+            current_b_col += b_cols
+            current_w_row += w_rows
+            current_w_col += w_cols
 
             # Stack the other components
             x_init = np.vstack([x_init, reservoir.x_init])
@@ -171,7 +177,7 @@ class Circuit:
         #         if i not in self.readouts:
         #             W = np.delete(W, i, axis=0)
 
-        return Reservoir(combA, B, r_init, x_init, 0.001, 100, d, W)
+        return Reservoir(comb_a, B, r_init, x_init, 0.001, 100, d, W)
 
 
 def validate2reservoirs(config) -> list[Reservoir]:
@@ -179,7 +185,8 @@ def validate2reservoirs(config) -> list[Reservoir]:
     for connection in config:
         if len(connection) != 4:
             raise ValueError(
-                "Each connection must have 4 elements: [reservoir1, output_index, reservoir2, input_index]"
+                "Each connection must have 4 elements: \
+                    [reservoir1, output_index, reservoir2, input_index]"
             )
         if not isinstance(connection[0], Reservoir):
             raise ValueError(
