@@ -1,4 +1,6 @@
-from examples.imports import Reservoir, solve, inputs, plotters, sp
+from prnn.reservoir import Reservoir
+from utils import inputs, plotters
+import sympy as sp
 
 verbose = False
 o1, s1, s2 = sp.symbols("o1 s1 s2")
