@@ -31,3 +31,4 @@ src/reservoir_compiler.egg-info/top_level.txt
 src/utils/__init__.py
 src/utils/inputs.py
 src/utils/plotters.py
+tests/test_ir.py
