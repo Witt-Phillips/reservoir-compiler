@@ -1,4 +1,4 @@
-from examples.imports import Reservoir, solve, inputs, plotters, sp
+from examples.imports import Reservoir, inputs, plotters, sp
 
 verbose = False
 o1, o2, s1, s2 = sp.symbols("o1 o2 s1 s2")

@@ -1,4 +1,4 @@
-from examples.imports import Reservoir, solve, inputs, plotters, sp
+from examples.imports import Reservoir, inputs, plotters, sp
 
 """ NOTE: currently broken, working on figuring out why. """
 

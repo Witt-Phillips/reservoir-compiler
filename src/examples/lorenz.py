@@ -1,4 +1,4 @@
-from examples.imports import Reservoir, solve, inputs, plotters, sp
+from examples.imports import Reservoir, inputs, plotters, sp
 
 o1, o2, o3 = sp.symbols("o1 o2 o3")
 

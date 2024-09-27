@@ -1,4 +1,4 @@
-from examples.imports import Reservoir, solve, inputs, plotters
+from examples.imports import Reservoir, inputs, plotters
 from prnn.circuit import Circuit
 
 nor: Reservoir = Reservoir.load("nor")

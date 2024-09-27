@@ -1,4 +1,4 @@
-from examples.imports import Reservoir, solve, inputs, plotters, sp
+from examples.imports import Reservoir, inputs, plotters
 from prnn.circuit import Circuit
 
 # Circuit configuration and generation.

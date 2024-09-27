@@ -1,5 +1,5 @@
 import numpy as np
-from examples.imports import Reservoir, solve, inputs, plotters, sp
+from examples.imports import Reservoir, inputs, plotters
 
 # define symbolic equations (naming is not constrained) -----------------
 nand_res: Reservoir = Reservoir.loadFile("nand")

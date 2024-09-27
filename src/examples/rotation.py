@@ -1,4 +1,4 @@
-from examples.imports import Reservoir, solve, inputs, plotters, sp
+from examples.imports import Reservoir, inputs, plotters, sp
 
 # TODO: Make 'x#' valid symbol name for sympy eqs
 o1, o2, o3, s1, s2, s3 = sp.symbols("o1 o2 o3 s1 s2 s3")
