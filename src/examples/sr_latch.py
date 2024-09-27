@@ -11,4 +11,4 @@ circuitRes = Circuit(
 inp = inputs.sr_inputs(2000)
 outputs = circuitRes.run4input(inp)
 
-plotters.InOutSplit(inp, outputs, "SR Latch")
+plotters.in_out_split(inp, outputs, "SR Latch")

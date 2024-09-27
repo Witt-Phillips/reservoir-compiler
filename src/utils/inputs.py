@@ -1,11 +1,13 @@
+""" 
+Util functions for generating inputs to RNNs
+"""
+
 import numpy as np
-""" All return inputs of shape (# inputs, time) """
+
 
 def high_low_inputs(time):
-    base_patterns = np.array([
-        [-0.1,  0.1, -0.1,  0.1],
-        [-0.1, -0.1,  0.1,  0.1]
-    ])
+    """Creates every high low permutation for two inputs"""
+    base_patterns = np.array([[-0.1, 0.1, -0.1, 0.1], [-0.1, -0.1, 0.1, 0.1]])
 
     reps = time // 4
     row1 = np.repeat(base_patterns[0], reps)
@@ -19,11 +21,10 @@ def high_low_inputs(time):
 
     return np.vstack((row1, row2))
 
+
 def high_low_inputs_3rows(time):
-    base_patterns = np.array([
-        [-0.1,  0.1, -0.1,  0.1],
-        [-0.1, -0.1,  0.1,  0.1]
-    ])
+    """High low perms for 3 inputs"""
+    base_patterns = np.array([[-0.1, 0.1, -0.1, 0.1], [-0.1, -0.1, 0.1, 0.1]])
 
     reps = time // 4
     row1 = np.repeat(base_patterns[0], reps)
@@ -41,25 +42,36 @@ def high_low_inputs_3rows(time):
     # Stack all three rows
     return np.vstack((row1, row2, row3))
 
+
 def zeros(time):
+    """Wrapper on np.zeros"""
     return np.zeros((1, time))
 
+
 def sr_inputs(time):
+    """Inputs for an SR-LATCH"""
     ot = np.ones((2, time, 4))
-    pt = np.concatenate((
-        np.array([[-1], [-1]])[::-1, :, np.newaxis] * ot[:, :1000, :],
-        np.array([[-1], [-1]])[::-1, :, np.newaxis] * ot,
-        np.array([[1], [-1]])[::-1, :, np.newaxis] * ot[:, :500, :],
-        np.array([[-1], [-1]])[::-1, :, np.newaxis] * ot,
-        np.array([[-1], [1]])[::-1, :, np.newaxis] * ot[:, :500, :],
-        np.array([[-1], [-1]])[::-1, :, np.newaxis] * ot
-    ), axis=1) * 0.1
+    pt = (
+        np.concatenate(
+            (
+                np.array([[-1], [-1]])[::-1, :, np.newaxis] * ot[:, :1000, :],
+                np.array([[-1], [-1]])[::-1, :, np.newaxis] * ot,
+                np.array([[1], [-1]])[::-1, :, np.newaxis] * ot[:, :500, :],
+                np.array([[-1], [-1]])[::-1, :, np.newaxis] * ot,
+                np.array([[-1], [1]])[::-1, :, np.newaxis] * ot[:, :500, :],
+                np.array([[-1], [-1]])[::-1, :, np.newaxis] * ot,
+            ),
+            axis=1,
+        )
+        * 0.1
+    )
 
     return pt[:, :, 0]
 
 
 # manually generated lorenz attractor
 def lorenz(time, dt=0.01):
+    """Inputs for a lorenz series"""
     time -= 1
     x, y, z = np.zeros((3, time + 1))
     x[0], y[0], z[0] = 0, 1, 1.05
@@ -72,7 +84,12 @@ def lorenz(time, dt=0.01):
 
     return np.stack((x, y, z), axis=0)
 
-def lorenz_engine(x, y, z, sig=10, rho=28, beta=8/3):
+
+def lorenz_engine(x, y, z):
+    """Manually generates a lorenz series"""
+    sig = 10
+    rho = 28
+    beta = 8 / 3
     dx = sig * (y - x)
     dy = x * (rho - z) - y
     dz = x * y - beta * z
