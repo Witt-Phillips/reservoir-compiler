@@ -20,7 +20,7 @@ logic = {
     "xnor": 0.0 + (s1) * (s2) / xf,
 }
 
-currentlyRunning = "nor"
+currentlyRunning = "and"
 logic_eqs = [
     sp.Eq(o1, 0.1 * (pitchfork_bifurcation + logic[currentlyRunning])),
 ]
