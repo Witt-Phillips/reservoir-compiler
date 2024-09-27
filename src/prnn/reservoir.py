@@ -1,8 +1,8 @@
+import os
+import pickle as pkl
 import numpy as np
 import sympy as sp
 import matlab.engine
-import pickle as pkl
-import os
 
 """
 Reservoir Structure:

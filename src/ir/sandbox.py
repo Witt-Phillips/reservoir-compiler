@@ -36,4 +36,4 @@ outputs = res.run4input(input_data)
 og_lorenz = outputs[:3]
 rotated_lorenz = outputs[3:]
 
-plotters.threeDInputOutput(og_lorenz, rotated_lorenz, "Programmed Lorenz Rotation")
+plotters.three_d_input_output(og_lorenz, rotated_lorenz, "Programmed Lorenz Rotation")

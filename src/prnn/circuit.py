@@ -34,153 +34,226 @@ class Circuit:
             self.reservoirs = new_reservoirs
 
     def connect(self) -> Reservoir:
-        # If there are reservoirs, return the first one
-        if not self.config:
-            l = len(self.reservoirs)
-            if l == 1:
-                return next(iter(self.reservoirs))
+        """
+        Connects multiple reservoirs based on the specified configuration
+        and returns the combined Reservoir object.
+        """
 
-            raise ValueError(
-                "Invalid config/reservoirs combinations \
-                              passed to connect."
-            )
+        # Validate configuration and reservoirs
+        res = self._validate_reservoirs()
+        if res:
+            return res  # ret of only 1 reservoir
 
-        # circuit components
-        dim_a = sum(res.A.shape[0] for res in self.reservoirs)
-        comb_a = np.zeros((dim_a, dim_a))
+        # put adjacencies of each res in self.reservoirs on diagonal, note indices of each
+        a, idxs = self._build_adj()
 
-        # put adjacencies on diagonal, note indices
+        # internalize each connection in config into a
+        self._process_connections(a, idxs)
+
+        # remove internalized columns of B and W
+        for res in self.reservoirs:
+            _cleanup_reservoir(res)
+
+        # combine other elements of constituent reservoirs
+        b, w, x_init, r_init, d = self._combine_reservoirs()
+
+        # Remove zero columns from B and corresponding entries in x_init
+        b, x_init = _remove_zero_columns(b, x_init)
+
+        # TODO: figure out if we only want to return readouts (then map ir readouts to circuit)
+        """ 
+        if self.readouts is not None:
+            for i in range(W.shape[0]):
+                if i not in self.readouts:
+                    W = np.delete(W, i, axis=0)
+        """
+        return Reservoir(a, b, r_init, x_init, 0.001, 100, d, w)
+
+    def _build_adj(self):
+        """
+        Builds the adjacency matrix and tracks reservoir indices.
+        Returns:
+        * adj: combined adjacency with each res in self.reservoirs
+        on adjacency
+        * res_idx: index of each constituent reservoir in adj.
+        """
+        dim = sum(r.A.shape[0] for r in self.reservoirs)
+        adj = np.zeros((dim, dim))
+
         idx = 0
-        reservoir_indices = {}
-        for reservoir in self.reservoirs:
-            # putsa on diagonal
-            a = reservoir.A
-            size = a.shape[0]
-            reservoir_indices[reservoir] = idx
-            comb_a[idx : idx + size, idx : idx + size] = a
-            idx += size
+        res_idx = {}
+        for r in self.reservoirs:
+            sz = r.A.shape[0]
+            res_idx[r] = idx
+            adj[idx : idx + sz, idx : idx + sz] = r.A
+            idx += sz
 
-        for connection in self.config:
-            output_net, a, input_net, b = connection
-            output_net: Reservoir
-            input_net: Reservoir
+        return adj, res_idx
 
-            # Internalize connection
-            w_row = output_net.W[a - 1, :].reshape(1, -1)  # * r
-            b_col = input_net.B[:, b - 1].reshape(-1, 1)
-            # a_section = b_col @ w_row
-            a_section = np.outer(b_col, w_row)
+    def _process_connections(self, comb_a, res_indices):
+        """
+        Processes connections between reservoirs and updates the combined adjacency matrix comb_a.
+        """
+        for out_res, out_idx, in_res, in_idx in self.config:
+            out_res: Reservoir
+            in_res: Reservoir
 
-            # keep track of internalized inputs/ outputs
-            output_net.usedOutputs.add(a)  # TODO: make this a set!!
-            input_net.usedInputs.add(b)
+            try:
+                # Get rows and columns from W and B matrices
+                w_row = out_res.W[out_idx - 1, :].reshape(1, -1)
+                b_col = in_res.B[:, in_idx - 1].reshape(-1, 1)
+            except IndexError as e:
+                raise ValueError(f"Index error when processing connection: {e}") from e
 
-            # Insert into comb_a at correct position
-            output_idx = reservoir_indices[output_net]
-            input_idx = reservoir_indices[input_net]
-            a_rows, a_cols = a_section.shape
-            comb_a[
-                input_idx : input_idx + a_rows, output_idx : output_idx + a_cols
-            ] += a_section
+            # Compute the outer product to internalize the connection
+            sec = np.outer(b_col, w_row)
 
-        for reservoir in self.reservoirs:
-            # delete used inputs
-            for folded_input in reservoir.usedInputs:
-                if reservoir.B.shape[1] > 1:
-                    reservoir.B = np.delete(reservoir.B, folded_input - 1, axis=1)
-                else:
-                    reservoir.B = np.zeros_like(reservoir.B)
+            # Track used inputs and outputs
+            out_res.usedOutputs.add(out_idx)
+            in_res.usedInputs.add(in_idx)
 
-                if reservoir.x_init.shape[0] > 1:
-                    reservoir.x_init = np.delete(
-                        reservoir.x_init, folded_input - 1, axis=0
+            # Retrieve index positions and validate dimensions before insertion
+            try:
+                out_pos = res_indices[out_res]
+                in_pos = res_indices[in_res]
+                sec_rows, sec_cols = sec.shape
+
+                if (
+                    comb_a.shape[0] < in_pos + sec_rows
+                    or comb_a.shape[1] < out_pos + sec_cols
+                ):
+                    raise ValueError(
+                        "Combined adjacency matrix size mismatch with reservoirs"
                     )
-                else:
-                    reservoir.x_init = np.zeros((1, 1))
 
-            # delete used rows of W (outputs)
-            for folded_output in reservoir.usedOutputs:
-                if reservoir.W.shape[0] > 1:
-                    reservoir.W = np.delete(reservoir.W, folded_output - 1, axis=0)
-                else:
-                    # reservoir.W = np.zeros_like(reservoir.W)
-                    reservoir.W = np.zeros((0, reservoir.A.shape[0]))
+                # Insert section into comb_a at the correct location
+                comb_a[in_pos : in_pos + sec_rows, out_pos : out_pos + sec_cols] += sec
+            except KeyError as e:
+                raise ValueError(
+                    f"Reservoir not found in reservoir indices: {e}"
+                ) from e
+
+    def _combine_reservoirs(self):
+        """
+        Combines the B and W matrices from multiple reservoirs, placing them
+        on their respective diagonals. Also stacks x_init, r_init, and d
+        components for each reservoir.
+        """
 
         # Initialize empty arrays for stacking and diagonal placement
-        x_init = np.array([]).reshape(0, 1)
-        r_init = np.array([]).reshape(0, 1)
-        d = np.array([]).reshape(0, 1)
-        B = np.array([]).reshape(0, 0)
-        W = np.array([]).reshape(0, 0)
+        x_all = np.zeros((0, 1))
+        r_all = np.zeros((0, 1))
+        d_all = np.zeros((0, 1))
+        b_comb = np.zeros((0, 0))
+        w_comb = np.zeros((0, 0))
 
         # Track the current row and column indices for placing the next matrix
-        current_b_row = 0
-        current_b_col = 0
-        current_w_row = 0
-        current_w_col = 0
+        b_row, b_col, w_row, w_col = 0, 0, 0, 0
 
-        for reservoir in self.reservoirs:
-            reservoir: Reservoir
-            b_matrix = reservoir.B
-            w_matrix = reservoir.W
-            b_rows, b_cols = b_matrix.shape
-            w_rows, w_cols = w_matrix.shape
+        for res in self.reservoirs:
+            b, w = res.B, res.W
+            b_r, b_c = b.shape
+            w_r, w_c = w.shape
 
-            # Determine new sizes for B and W
-            new_b_row_size = current_b_row + b_rows
-            new_b_col_size = current_b_col + b_cols
-            new_w_row_size = current_w_row + w_rows
-            new_w_col_size = current_w_col + w_cols
-
-            # Resize the B and W arrays to accommodate the new matrices
-            if B.size == 0:
-                B = np.zeros((new_b_row_size, new_b_col_size))
-            else:
-                B = np.pad(B, ((0, b_rows), (0, b_cols)), mode="constant")
-
-            if W.size == 0:
-                W = np.zeros((new_w_row_size, new_w_col_size))
-            else:
-                W = np.pad(W, ((0, w_rows), (0, w_cols)), mode="constant")
+            # Resize B and W arrays to fit the new matrices
+            b_comb = (
+                np.pad(b_comb, ((0, b_r), (0, b_c)), mode="constant")
+                if b_comb.size
+                else np.zeros((b_row + b_r, b_col + b_c))
+            )
+            w_comb = (
+                np.pad(w_comb, ((0, w_r), (0, w_c)), mode="constant")
+                if w_comb.size
+                else np.zeros((w_row + w_r, w_col + w_c))
+            )
 
             # Place the matrices B and W on their respective diagonals
-            B[
-                current_b_row : current_b_row + b_rows,
-                current_b_col : current_b_col + b_cols,
-            ] = b_matrix
-            W[
-                current_w_row : current_w_row + w_rows,
-                current_w_col : current_w_col + w_cols,
-            ] = w_matrix
+            b_comb[b_row : b_row + b_r, b_col : b_col + b_c] = b
+            w_comb[w_row : w_row + w_r, w_col : w_col + w_c] = w
 
-            # Update current row and column indices for B and W
-            current_b_row += b_rows
-            current_b_col += b_cols
-            current_w_row += w_rows
-            current_w_col += w_cols
+            # Update row and column indices
+            b_row, b_col = b_row + b_r, b_col + b_c
+            w_row, w_col = w_row + w_r, w_col + w_c
 
-            # Stack the other components
-            x_init = np.vstack([x_init, reservoir.x_init])
-            r_init = np.vstack([r_init, reservoir.r_init])
-            d = np.vstack([d, reservoir.d])
+            # Stack x_init, r_init, and d
+            x_all = np.vstack([x_all, res.x_init])
+            r_all = np.vstack([r_all, res.r_init])
+            d_all = np.vstack([d_all, res.d])
 
-        # TODO: remove superflous (all 0) cols of B/ x_inits.
-        finished = False
-        i = 0
-        while finished == False:
-            B, x_init, removed, finished = purge_Bx(B, x_init, i)
-            if not removed:
-                i = i + 1
+        return b_comb, w_comb, x_all, r_all, d_all
 
-        # if self.readouts is not None:
-        #     for i in range(W.shape[0]):
-        #         if i not in self.readouts:
-        #             W = np.delete(W, i, axis=0)
+    def _validate_reservoirs(self):
+        """
+        Validate reservoirs and configuration.
+        If there are no connections, return the first reservoir if only one exists.
+        Returns None if more than one reservoir or a configuration exists.
+        """
+        if not self.config and len(self.reservoirs) == 1:
+            return next(iter(self.reservoirs))
+        if not self.config:
+            raise ValueError(
+                "Invalid config/reservoirs combinations passed to connect."
+            )
+        return None
 
-        return Reservoir(comb_a, B, r_init, x_init, 0.001, 100, d, W)
+
+def _remove_zero_columns(b, x_init):
+    """
+    Removes columns in B that correspond to zero entries in x_init.
+
+    Args:
+        B (np.ndarray): Weight matrix.
+        x_init (np.ndarray): Input vector.
+
+    Returns:
+        B (np.ndarray): Updated B matrix.
+        x_init (np.ndarray): Updated x_init vector.
+    """
+    i = 0
+    while i < b.shape[1]:
+        # Check if all elements in column i are zeros
+        if np.all(b[:, i] == 0):
+            if b.shape[1] > 1:  # Remove column if not the last one
+                b = np.delete(b, i, axis=1)
+                x_init = np.delete(x_init, i, axis=0)
+            else:  # If it's the last column, set to zeros
+                b = np.zeros_like(b)
+                x_init = np.zeros((1, 1))
+                break
+        else:
+            i += 1
+    return b, x_init
+
+
+def _cleanup_reservoir(reservoir: Reservoir):
+    """Remove used inputs from B and x_init, and used outputs from W for a reservoir."""
+
+    # Remove used inputs from B and x_init
+    for inp in reservoir.usedInputs:
+        reservoir.B = (
+            np.delete(reservoir.B, inp - 1, axis=1)
+            if reservoir.B.shape[1] > 1
+            else np.zeros_like(reservoir.B)
+        )
+        reservoir.x_init = (
+            np.delete(reservoir.x_init, inp - 1, axis=0)
+            if reservoir.x_init.shape[0] > 1
+            else np.zeros((1, 1))
+        )
+
+    # Remove used outputs from W
+    for out in reservoir.usedOutputs:
+        reservoir.W = (
+            np.delete(reservoir.W, out - 1, axis=0)
+            if reservoir.W.shape[0] > 1
+            else np.zeros((0, reservoir.A.shape[0]))
+        )
 
 
 def validate2reservoirs(config) -> list[Reservoir]:
+    """
+    Validates connections (config) of a circuit object
+    """
     reservoirs = set()
     for connection in config:
         if len(connection) != 4:
@@ -209,26 +282,3 @@ def validate2reservoirs(config) -> list[Reservoir]:
         reservoirs.add(connection[2])
 
     return reservoirs
-
-
-def purge_Bx(B, x, i):
-    flag = False
-    removed_col = False
-    finished = False
-    # check if all 0s
-    for j in range(B.shape[0]):
-        if B[j, i] != 0:
-            flag = True
-
-    # remove col if all zeros & isn't last col
-    if not flag:
-        if B.shape[1] > 1:
-            B = np.delete(B, i, axis=1)  # delete row in W
-            x = np.delete(x, i, axis=0)  # delete corresponding input
-            removed_col = True
-
-    # are we looking at the last column in B? Base case
-    if i == (B.shape[1] - 1):
-        finished = True
-
-    return B, x, removed_col, finished
