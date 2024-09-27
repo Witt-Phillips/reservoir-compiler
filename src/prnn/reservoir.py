@@ -83,7 +83,7 @@ class Reservoir:
         return Reservoir(A, B, r_init, x_init, global_timescale, gamma)
 
     @staticmethod
-    def solve(sym_eqs, verbose=False):
+    def solve(sym_eqs, verbose=False) -> "Reservoir":
         """
         Solves a system of equations using a baseRNN (Reservoir) of the correct size,
         solves via call to Jason's code via MatLab Engine.
@@ -226,7 +226,7 @@ class Reservoir:
             raise FileNotFoundError("error: save: dumped file, then couldn't find it")
 
     @classmethod
-    def load(cls, filename, directory="./src/presets"):
+    def load(cls, filename, directory="./src/presets") -> "Reservoir":
         filepath = os.path.join(directory, f"{filename}.rsvr")
 
         # check dir exists
@@ -288,7 +288,7 @@ class Reservoir:
         return A, B, r_init, x_init, global_timescale, gamma
 
     @staticmethod
-    def mat2py(A, B, r_init, x_init, global_timescale, gamma, d=None, W=None):
+    def mat2py(A, B, r_init, x_init, global_timescale, gamma, d=None, W=None) -> "Reservoir":
         A = np.array(A, dtype=float)
         B = np.array(B, dtype=float)
         d = np.array(d, dtype=float) if d is not None else None

@@ -1,9 +1,10 @@
 """ Core class & compile() method """
 
-from typing import Optional, Union
+from typing import Optional, Union, List, Tuple
 import numpy as np
 from ir.lang import Prog, Expr, Opc, Operand
 from ir.fn_library import rnn_lib
+from ir.variables import VariableManager
 from prnn.reservoir import Reservoir
 from prnn.circuit import Circuit
 
@@ -15,16 +16,14 @@ class Core:
 
     def __init__(self, prog: Prog):
         # circuit elements
-        self.config = []  # circuit configuration
-        self.reservoirs = {}  # track reservoirs and their input/output usage
+        self.config: List[Tuple[Reservoir, int, Reservoir, int]] = []
+        self.reservoirs: List[Reservoir] = {}
         self.readouts = []
-        self.variables = {}  # variable to (reservoir, output) mapping
-        self.inputs = {}  # input tracking
-        self.forward_variables = set()  # forward-declared variables
-        self.unresolved_exprs = []  # deferred expressions
+        self.var_mngr = VariableManager()
+        self.unresolved_exprs: List[Tuple[List[str], Expr]] = []  # deferred expressions
         self.resolved_deps = False  # flag to track new resolved expressions
         self.dependencies = set()  # tracks dependencies
-        self.prog = prog
+        self.prog: Prog = prog
 
     def compile(self, verbose=True) -> Optional[Reservoir]:
         """
@@ -38,6 +37,7 @@ class Core:
         self._resolve_unresolved_expressions()
 
         circ = Circuit(self.config, [], reservoirs=list(self.reservoirs.keys()))
+
         if verbose:
             self._print_verbose_output()
 
@@ -83,12 +83,10 @@ class Core:
 
         for i, name in enumerate(names):
             if self._is_dependency(name):
-                self.forward_variables.add(name)
+                self.var_mngr.forward_declare(name)
             else:
-                self.variables[name] = (processed_val, i)
+                self.var_mngr.declare_var(name, processed_val, i)
                 self._resolve_deferred_expressions(name)
-
-        return None
 
     def _handle_rec(self, expr: Expr):
         """
@@ -96,17 +94,14 @@ class Core:
         are considered in scope for the user, but must be later defined to compile.
         """
         for name in expr.operands[0]:
-            self.forward_variables.add(name)
-        return None
+            self.var_mngr.forward_declare(name)
 
     def _handle_input(self, expr: Expr):
         """
         * Define the input variables.
         """
         for name in expr.operands[0]:
-            assert name not in self.variables, f"INPUT: variable {name} already exists"
-            self.inputs[name] = 0
-        return None
+            self.var_mngr.declare_input(name)
 
     def _handle_ret(self, expr: Expr):
         """
@@ -119,7 +114,6 @@ class Core:
                 resolved[0], Reservoir
             ), f"RET: invalid operand {name}"
             self.readouts.append(resolved)
-        return None
 
     def _handle_custom_opcode(self, expr: Expr) -> Reservoir:
         """
@@ -161,7 +155,7 @@ class Core:
         object if it represents a gate or expression.
         """
         if isinstance(opr, str):
-            return self.variables.get(opr, opr)
+            return self.var_mngr.get_var(opr)
         if isinstance(opr, Expr):
             return self._process_expr(opr)
 
@@ -174,9 +168,9 @@ class Core:
         of another.
         """
         if isinstance(operand, str):
-            if operand in self.inputs:
+            if operand in self.var_mngr.inps:
                 self.reservoirs[target_res]["u_inp"] += 1
-            elif operand in self.forward_variables:
+            elif operand in self.var_mngr.fwd_vars:
                 self.dependencies.add(operand)
             else:
                 raise ValueError(f"Undefined operand {operand}")
@@ -195,8 +189,8 @@ class Core:
             if name in deps:
                 deps.remove(name)
                 self.resolved_deps = True
-        if name in self.forward_variables:
-            self.forward_variables.remove(name)
+        if name in self.var_mngr.fwd_vars:
+            self.var_mngr.rm_fwd_dec(name)
 
     def _resolve_unresolved_expressions(self):
         """
@@ -231,11 +225,16 @@ class Core:
             "\nReservoirs:\n"
             + "\n".join(str(reservoir) for reservoir in self.reservoirs)
         )
-        print("\nVars:\n" + "\n".join(f"{k}: {v}" for k, v in self.variables.items()))
-        print("\nInputs:\n" + "\n".join(f"{k}: {v}" for k, v in self.inputs.items()))
+        print(
+            "\nVars:\n" + "\n".join(f"{k}: {v}" for k, v in self.var_mngr.vars.items())
+        )
+        print(
+            "\nInputs:\n"
+            + "\n".join(f"{k}: {v}" for k, v in self.var_mngr.inps.items())
+        )
         print("\nReadout:\n" + "\n".join(str(readout) for readout in self.readouts))
         print(
-            "\nForward Vars:\n" + "\n".join(str(var) for var in self.forward_variables)
+            "\nForward Vars:\n" + "\n".join(str(var) for var in self.var_mngr.fwd_vars)
         )
         print(
             "\nUnresolved Expressions:\n"
