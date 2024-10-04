@@ -19,8 +19,6 @@ class Opc(Enum):
     LET = auto()
     RET = auto()
     INPUT = auto()
-    REC = auto()
-
 
 @dataclass
 class Operand:

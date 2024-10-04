@@ -4,6 +4,68 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+def plot_matrix_heatmap(matrix: np.ndarray, title: str = "Matrix Heatmap"):
+    plt.figure(figsize=(10, 8))
+    plt.imshow(matrix, cmap="viridis", aspect="auto")
+    plt.colorbar(label="Value")
+    plt.title(title)
+    plt.xlabel("Column")
+    plt.ylabel("Row")
+    plt.tight_layout()
+    plt.show()
+
+
+def plot_reservoir_matrices(reservoir, title_prefix="Reservoir Matrices"):
+    """
+    Plots all matrices and vectors in a reservoir in one big plot with subplots.
+
+    Args:
+    reservoir: A Reservoir object containing matrices A, B, W, and vectors x_init, r_init, and d.
+    title_prefix: A string to prefix all plot titles.
+    """
+    components = {
+        "A": reservoir.A,
+        "B": reservoir.B,
+        "W": reservoir.W,
+        "x_init": reservoir.x_init,
+        "r_init": reservoir.r_init,
+        "d": reservoir.d,
+    }
+
+    num_components = sum(
+        1
+        for component in components.values()
+        if component is not None and component.size > 0
+    )
+
+    # Calculate the number of rows and columns for the subplots
+    num_cols = 2
+    num_rows = (num_components + 1) // num_cols
+
+    fig, axes = plt.subplots(num_rows, num_cols, figsize=(10, 2.5 * num_rows))
+
+    if num_rows == 1:
+        axes = [axes]
+
+    idx = 0
+    for name, component in components.items():
+        if component is not None and component.size > 0:
+            # Reshape vectors to 2D arrays for consistent plotting
+            if component.ndim == 1:
+                component = component.reshape(-1, 1)
+
+            ax = axes[idx // num_cols, idx % num_cols]
+            im = ax.imshow(component, cmap="viridis", aspect="auto")
+            fig.colorbar(im, ax=ax, label="Value")
+            ax.set_title(f"{title_prefix} - {name}")
+            ax.set_xlabel("Column")
+            ax.set_ylabel("Row")
+            idx += 1
+
+    plt.tight_layout()
+    plt.show()
+
+
 def in_out_split(inputs, outputs, title):
     """2 plots; one with inputs, the other with outputs. Good for 2d"""
     if inputs.shape[1] != outputs.shape[1]:

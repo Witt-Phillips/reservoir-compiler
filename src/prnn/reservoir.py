@@ -25,7 +25,9 @@ class Reservoir:
 
     def __init__(
         self, A, B, r_init, x_init, global_timescale=0.1, gamma=100, d=None, W=None
+        ,name=None
     ):
+        self.name=name
         self.A: np.ndarray = A
         self.B: np.ndarray = B
         self.r_init: np.ndarray = (

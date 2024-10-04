@@ -1,4 +1,6 @@
-from examples.imports import Reservoir, inputs, plotters
+from prnn.reservoir import Reservoir
+from utils import inputs, plotters
+import sympy as sp
 from prnn.circuit import Circuit
 
 # Circuit configuration and generation.
@@ -22,10 +24,9 @@ circuit = Circuit(
 )
 
 circuitRes = circuit.connect()
-
 # Run for no input.
 time = 4000
 input_data = inputs.zeros(time)
 outputs = circuitRes.run4input(input_data)
 
-plotters.Outputs(outputs, "Procedurally Constructed Oscillator")
+plotters.plt_outputs(outputs, "Procedurally Constructed Oscillator")
