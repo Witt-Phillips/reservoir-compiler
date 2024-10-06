@@ -5,6 +5,7 @@ from cgraph.cgraph import CGraph
 from ir.fn_library import rnn_lib
 from prnn.reservoir import Reservoir
 
+
 class Core:
     """
     Implements the core of the reservoir language compiler, compiling IR expressions -> NetworkX graph.
@@ -12,11 +13,12 @@ class Core:
 
     uid = 0
 
-    def __init__(self, prog: Prog, verbose=False):
+    def __init__(self, prog: Prog, funcs={}, verbose=False):
         self.graph = CGraph()
         self.vars = set()  # set of declared symbols
         self.inps = set()
         self.prog = prog
+        self.funcs: dict[str, Tuple[int, int, Reservoir]] = funcs
         self.verbose = verbose  # Set this to True to enable debug prints
 
     def compile_to_cgraph(self) -> CGraph:
@@ -87,9 +89,9 @@ class Core:
     def _handle_custom_opcode(self, expr: Expr) -> Reservoir:
         opcode = expr.op
         assert isinstance(opcode, str), "Custom opcode must be a string"
-        assert opcode in rnn_lib, f"Opcode {opcode} not found in library"
+        # assert opcode in rnn_lib, f"Opcode {opcode} not found in library"
 
-        inp_dim, out_dim, res_path = rnn_lib[opcode]
+        """ inp_dim, out_dim, res_path = rnn_lib[opcode]
         if self.verbose:
             print(
                 f"Handling custom opcode: {opcode}, expected input dim: {inp_dim}, output dim: {out_dim}"
@@ -101,7 +103,9 @@ class Core:
 
         if self.verbose:
             print(f"Loaded reservoir from path {res_path}, assigned name {res.name}")
-
+ """
+        _, _, res = self._res_from_lib(opcode)
+        self.graph.add_reservoir(res.name, reservoir=res)
         # Check operands
         operands = expr.operands
         for i, sym in enumerate(operands):
@@ -109,6 +113,7 @@ class Core:
                 print(f"Processing operand {i}: {sym}")
             if (sym not in self.inps) and (sym not in self.vars):
                 ValueError(f"Used undefined symbol {sym}")
+
             self.graph.add_edge(sym, res.name, in_idx=i)
             if self.verbose:
                 print(
@@ -125,3 +130,31 @@ class Core:
         if self.verbose:
             print(f"Generated unique reservoir ID: {uid}")
         return uid
+
+    def _res_from_lib(self, opcode: str) -> Tuple[int, int, Reservoir]:
+        """
+        Retrieves a reservoir from the library based on the given opcode.
+        Searches both rnn_lib (which gets preference) and then self.funcs.
+        """
+        if opcode in rnn_lib:
+            if self.verbose:
+                print(f"Found opcode {opcode} in rnn_lib")
+            inp_dim, out_dim, res_path = rnn_lib[opcode]
+            res = Reservoir.load(res_path).copy()
+            res.name = self._generate_uid()
+            if self.verbose:
+                print(
+                    f"Loaded reservoir from path {res_path}, assigned name {res.name}"
+                )
+            return inp_dim, out_dim, res
+        elif opcode in self.funcs:
+            if self.verbose:
+                print(f"Found opcode {opcode} in self.funcs")
+            inp_dim, out_dim, res = self.funcs[opcode]
+            res = res.copy()
+            res.name = self._generate_uid()
+            if self.verbose:
+                print(f"Created reservoir using function for opcode {res.name}")
+            return inp_dim, out_dim, res
+        else:
+            raise ValueError(f"Opcode {opcode} not found in rnn_lib or self.funcs")

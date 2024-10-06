@@ -179,13 +179,25 @@ class CGraph:
         # Position nodes using the basic spring layout
         pos = nx.spring_layout(self.graph)
 
+        # Define colors for different node types
+        node_colors = []
+        for node in self.graph.nodes(data=True):
+            if node[1]["type"] == "input":
+                node_colors.append("lightgreen")
+            elif node[1]["type"] == "return":
+                node_colors.append("lightcoral")
+            elif node[1]["type"] == "reservoir":
+                node_colors.append("lightblue")
+            else:
+                node_colors.append("skyblue")  # Default color
+
         # Draw nodes with a professional look and ensure proper spacing
         nx.draw(
             self.graph,
             pos,
             with_labels=True,
             node_size=2500,  # Increase node size to hold text
-            node_color="skyblue",  # Professional color for nodes
+            node_color=node_colors,  # Use the defined colors for nodes
             edge_color="black",  # Darker edges for better contrast
             font_size=8,  # Standard font size for readability
             font_weight="regular",  # Regular font weight for labels

@@ -21,7 +21,8 @@ class Resolver:
 
     def resolve(self) -> Reservoir:
         # TODO: Populate adjacency
-        a = self._gen_composite_adjacency()
+        dim = self._get_reservoirs()
+        a = self._gen_composite_adjacency(dim)
         a = self._process_connections(a)
         self._cleanup_reservoirs()
         self._combine_reservoirs(a)
@@ -31,55 +32,59 @@ class Resolver:
 
         return self.reservoir
 
-    def _gen_composite_adjacency(self) -> np.ndarray:
+    def _get_reservoirs(self) -> int:
         """
-        Generates a composite reservoir from the CGraph.
+        Retrieves all reservoirs from the CGraph and calculates the total dimension.
+        Side effect: updates self.res_idx_map with the indices of each reservoir in the composite.
         Returns:
-        * a: combined adjacency matrix
-        side effect: updates self.res_idx_map with the indices of
-        each reservoir in the composite
+        * dim: total dimension of all reservoirs combined
         """
-
-        # pass 1: get all reservoirs and their dimensions
-        reservoirs: List[Reservoir] = []
         dim = 0
+        idx = 0
         for name in self.graph.all_nodes():
             node = self.graph.get_node(name)
             if node["type"] == "reservoir":
                 reservoir: Reservoir = node["reservoir"]
                 dim += reservoir.A.shape[0]
-                reservoirs.append(reservoir)
+                self.res_idx_map[reservoir] = idx
+                idx += reservoir.A.shape[0]
                 if self.verbose:
                     print(reservoir.name)
-        if self.verbose:
-            print("Dim composite A:", dim)
+        return dim
 
+    def _gen_composite_adjacency(self, dim) -> np.ndarray:
+        """
+        Generates a composite reservoir from the CGraph.
+        Returns:
+        * a: combined adjacency matrix
+        """
         a = np.zeros((dim, dim))
-        idx = 0
-        for r in reservoirs:
+        for r, idx in self.res_idx_map.items():
             sz = r.A.shape[0]
-            self.res_idx_map[r] = idx
             a[idx : idx + sz, idx : idx + sz] = r.A
-            idx += sz
-
         return a
 
     def _process_connections(self, a):
         """
-        Processes the connections in the CGraph. Interalizes connections
+        Processes the connections in the CGraph. Internalizes connections
         and removes now-internalized rows and columns from W and B.
         """
+        removed_indices = {}
+
         for var in self.graph.all_nodes():
             node = self.graph.get_node(var)
             if node["type"] != "var":
                 continue
 
+            # Get source and target reservoirs and indices
             out_res, out_idx = self.graph.get_var_source(var)
             in_res, in_idx = self.graph.get_var_target(var)
-            self.connections_to_clean.add((out_res, out_idx, in_res, in_idx))
 
-            if self.verbose:
-                print(f"Processing connection: {var} -> {out_res} -> {in_res}")
+            # Adjust indices if columns have been removed
+            out_idx = self._adjust_index(out_res, out_idx, removed_indices)
+            in_idx = self._adjust_index(in_res, in_idx, removed_indices)
+
+            self.connections_to_clean.add((out_res, out_idx, in_res, in_idx))
 
             # Get rows and columns from W and B matrices
             try:
@@ -96,30 +101,60 @@ class Resolver:
 
             # Insert section into comb_a at the correct location
             a[in_pos : in_pos + sec_rows, out_pos : out_pos + sec_cols] += sec
+
         return a
 
+    def _adjust_index(self, res, idx, removed_indices):
+        """
+        Adjusts the index based on the number of removed columns.
+        """
+        if res not in removed_indices:
+            removed_indices[res] = []
+
+        for removed_idx in sorted(removed_indices[res]):
+            if idx > removed_idx:
+                idx -= 1
+
+        return idx
+
     def _cleanup_reservoirs(self):
+        input_indices_to_remove = {}
+        output_indices_to_remove = {}
+
         for out_res, out_idx, in_res, in_idx in self.connections_to_clean:
             out_res: Reservoir
             in_res: Reservoir
-            # Remove used inputs from B and x_init for in_res
-            in_res.B = (
-                np.delete(in_res.B, in_idx - 1, axis=1)
-                if in_res.B.shape[1] > 1
-                else np.zeros_like(in_res.B)
-            )
-            in_res.x_init = (
-                np.delete(in_res.x_init, in_idx - 1, axis=0)
-                if in_res.x_init.shape[0] > 1
-                else np.zeros((1, 1))
-            )
 
-            # Remove used outputs from W for out_res
-            out_res.W = (
-                np.delete(out_res.W, out_idx - 1, axis=0)
-                if out_res.W.shape[0] > 1
-                else np.zeros((0, out_res.A.shape[0]))
-            )
+            # Collect indices to remove
+            if in_res not in input_indices_to_remove:
+                input_indices_to_remove[in_res] = []
+            if out_res not in output_indices_to_remove:
+                output_indices_to_remove[out_res] = []
+
+            input_indices_to_remove[in_res].append(in_idx - 1)
+            output_indices_to_remove[out_res].append(out_idx - 1)
+
+        # Remove indices from B and W
+        for in_res, indices in input_indices_to_remove.items():
+            for idx in sorted(indices, reverse=True):
+                in_res.B = (
+                    np.delete(in_res.B, idx, axis=1)
+                    if in_res.B.shape[1] > 1
+                    else np.zeros_like(in_res.B)
+                )
+                in_res.x_init = (
+                    np.delete(in_res.x_init, idx, axis=0)
+                    if in_res.x_init.shape[0] > 1
+                    else np.zeros((1, 1))
+                )
+
+        for out_res, indices in output_indices_to_remove.items():
+            for idx in sorted(indices, reverse=True):
+                out_res.W = (
+                    np.delete(out_res.W, idx, axis=0)
+                    if out_res.W.shape[0] > 1
+                    else np.zeros((0, out_res.A.shape[0]))
+                )
 
     # check! done by chat
     def _combine_reservoirs(self, a):
@@ -134,6 +169,8 @@ class Resolver:
         d_all = np.zeros((0, 1))
         b_comb = np.zeros((0, 0))
         w_comb = np.zeros((0, 0))
+        input_names = []
+        output_names = []
 
         # Track the current row and column indices for placing the next matrix
         b_row, b_col, w_row, w_col = 0, 0, 0, 0
@@ -169,6 +206,10 @@ class Resolver:
             r_all = np.vstack([r_all, res.r_init])
             d_all = np.vstack([d_all, res.d])
 
+            # Update input and output names
+            input_names.extend(res.input_names)
+            output_names.extend(res.output_names)
+
         # Create and return a new combined Reservoir
         self.reservoir = Reservoir(
             A=a,
@@ -179,6 +220,8 @@ class Resolver:
             d=d_all,
             global_timescale=0.001,
             gamma=100,
+            input_names=input_names,
+            output_names=output_names,
         )
 
         # Remove ignored inputs
@@ -191,9 +234,12 @@ class Resolver:
         """
         i = 0
         while i < self.reservoir.B.shape[1]:
+
             # Check if all elements in column i are zeros
             if np.all(self.reservoir.B[:, i] == 0):
                 if self.reservoir.B.shape[1] > 1:  # Remove column if not the last one
+                    # self.reservoir.input_names.pop(i)
+
                     self.reservoir.B = np.delete(self.reservoir.B, i, axis=1)
                     self.reservoir.x_init = np.delete(self.reservoir.x_init, i, axis=0)
                 else:  # If it's the last column, set to zeros

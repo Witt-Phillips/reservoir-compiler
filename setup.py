@@ -11,6 +11,7 @@ setup(
         "matplotlib==3.9.2",
         "numpy==2.1.1",
         "sympy==1.13.1",
+        "networkx==3.3",
     ],
     extras_require={
         "dev": [

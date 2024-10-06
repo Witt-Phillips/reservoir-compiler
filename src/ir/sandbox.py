@@ -12,12 +12,12 @@ from utils import plotters, inputs
 lorenz = Prog(
     [
         # reference lorenz
-        # Expr(Opc.LET, [["l1a", "l2a", "l3a"], Expr("LORENZ", [])]),
+        Expr(Opc.LET, [["l1a", "l2a", "l3a"], Expr("LORENZ", [])]),
         # rotate lorenz
         Expr(Opc.LET, [["l1", "l2", "l3"], Expr("LORENZ", [])]),
         Expr(Opc.LET, [["r1", "r2", "r3"], Expr("ROTATE90", ["l1", "l2", "l3"])]),
         Expr(Opc.RET, [["r1", "r2", "r3"]]),
-        # Expr(Opc.RET, [["l1a", "l2a", "l3a"]]),
+        Expr(Opc.RET, [["l1a", "l2a", "l3a"]]),
     ]
 )
 
@@ -55,17 +55,18 @@ forward_dec = Prog(
 
 graph: CGraph = Core(oscillator, verbose=False).compile_to_cgraph()
 # graph.print()
-graph.draw()
+# graph.draw()
 res = Resolver(graph, verbose=True).resolve()
 # res.print()
 inp = inputs.zeros(4000)
 outputs = res.run4input(inp)
-plotters.plt_outputs(outputs, "Procedural Oscillator")
+plotters.plt_outputs(outputs, "oscillator", res.output_names)
+# plotters.plt_outputs(outputs, "lorenz", res.output_names)
 
-""" TIME = 5000
-lorenz_inputs = inputs.zeros(TIME)
-outputs = res.run4input(lorenz_inputs)
+# TIME = 4000
+# lorenz_inputs = inputs.zeros(TIME)
+# outputs = res.run4input(lorenz_inputs)
 # plotters.plot_matrix_heatmap(res.A)
 # plotters.plot_reservoir_matrices(res, "Lorenz Attractor")
-plotters.three_d(outputs, "Lorenz Attractor")
- """
+# plotters.three_d(outputs, "Lorenz Attractor")
+# plotters.three_d_input_output(outputs[:3, :], outputs[3:, :], "Lorenz Attractor")

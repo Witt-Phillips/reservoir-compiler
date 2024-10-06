@@ -108,14 +108,19 @@ def in_out_split(inputs, outputs, title):
     plt.show()
 
 
-def plt_outputs(outputs, title):
+def plt_outputs(outputs, title, output_names):
+    if outputs.shape[0] == 0:
+        print("No outputs to plot")
+        return
+
     """Basic plotter designed for output portions"""
     time = np.arange(outputs.shape[1])
     plt.figure(figsize=(12, 8))
 
     # outputs only
     for j in range(outputs.shape[0]):
-        plt.plot(time, outputs[j, :], label=f"Output {j+1}")
+        label = output_names[j] if j < len(output_names) else f"Output {j+1}"
+        plt.plot(time, outputs[j, :], label=label)
 
     # Adding a 10% margin to y-limits for outputs
     outputs_min, outputs_max = np.min(outputs), np.max(outputs)
