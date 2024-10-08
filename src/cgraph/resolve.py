@@ -27,8 +27,8 @@ class Resolver:
         self._cleanup_reservoirs()
         self._combine_reservoirs(a)
         self._remove_ignored_inputs()
-
         self._internalize_constant_inputs()
+
         # TODO: check input dims (make list of input names a reservoir member)
         # TODO: restrict output space to ret (make list of output names a reservoir member)
 
@@ -79,6 +79,8 @@ class Resolver:
             # Get source and target reservoirs and indices
             out_res, out_idx = self.graph.get_var_source(var)
             in_res, in_idx = self.graph.get_var_target(var)
+
+            print(in_res, var)
 
             # Adjust indices if columns have been removed
             out_idx = self._adjust_index(out_res, out_idx, removed_indices)
@@ -160,7 +162,6 @@ class Resolver:
                     else np.zeros((0, out_res.A.shape[0]))
                 )
 
-    # check! done by chat
     def _combine_reservoirs(self, a):
         """
         Combines the B and W matrices from multiple reservoirs, placing them
@@ -236,7 +237,6 @@ class Resolver:
         # Remove ignored inputs
         self._remove_ignored_inputs()
 
-    # check! done by chat
     def _remove_ignored_inputs(self):
         """
         Removes columns in B that correspond to zero entries in x_init for the combined reservoir.
@@ -264,26 +264,21 @@ class Resolver:
         removed_indices = {"B": [], "x_init": []}
 
         for idx, inp_name in enumerate(self.reservoir.input_names):
-            # Adjust indices before accessing arrays
             adjusted_i_B = self._adjust_index("B", idx, removed_indices)
             adjusted_i_x_init = self._adjust_index("x_init", idx, removed_indices)
 
             node = self.graph.get_node(inp_name)
             if node["value"] is not None:
-                # Update A using adjusted indices
                 b_col = self.reservoir.B[:, adjusted_i_B].reshape(-1, 1)
                 x_row = self.reservoir.x_init[adjusted_i_x_init, :].reshape(1, -1)
                 self.reservoir.d += b_col @ x_row
 
-                # Delete the adjusted index from B
                 if self.reservoir.B.shape[1] > 1:
                     self.reservoir.B = np.delete(self.reservoir.B, adjusted_i_B, axis=1)
                 else:
                     self.reservoir.B = np.zeros_like(self.reservoir.B)
-                # Record the removed index for B
                 removed_indices["B"].append(adjusted_i_B)
 
-                # Delete the adjusted index from x_init
                 if self.reservoir.x_init.shape[0] > 1:
                     self.reservoir.x_init = np.delete(
                         self.reservoir.x_init, adjusted_i_x_init, axis=0
@@ -292,13 +287,10 @@ class Resolver:
                     self.reservoir.x_init = np.zeros(
                         (1, self.reservoir.x_init.shape[1])
                     )
-                # Record the removed index for x_init
                 removed_indices["x_init"].append(adjusted_i_x_init)
 
-                # Add input name to remove list
                 to_remove.append(inp_name)
 
-        # Remove internalized input names
         for inp_name in to_remove:
             self.reservoir.input_names.remove(inp_name)
             if self.verbose:
