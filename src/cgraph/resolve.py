@@ -86,6 +86,10 @@ class Resolver:
 
             self.connections_to_clean.add((out_res, out_idx, in_res, in_idx))
 
+            # remove internalized variable for reservoir input/ output lists
+            out_res.output_names.remove(var)
+            in_res.input_names.remove(var)
+
             # Get rows and columns from W and B matrices
             try:
                 w_row = out_res.W[out_idx - 1, :].reshape(1, -1)
@@ -207,8 +211,13 @@ class Resolver:
             d_all = np.vstack([d_all, res.d])
 
             # Update input and output names
-            input_names.extend(res.input_names)
-            output_names.extend(res.output_names)
+            for name in res.input_names:
+                if name not in input_names:
+                    input_names.append(name)
+
+            for name in res.output_names:
+                if name not in output_names:
+                    output_names.append(name)
 
         # Create and return a new combined Reservoir
         self.reservoir = Reservoir(

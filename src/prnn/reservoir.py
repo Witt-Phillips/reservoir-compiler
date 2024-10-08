@@ -24,12 +24,22 @@ class Reservoir:
     """
 
     def __init__(
-        self, A, B, r_init, x_init, global_timescale=0.1, gamma=100, d=None, W=None
-        ,name=None, input_names=[], output_names=[]
+        self,
+        A,
+        B,
+        r_init,
+        x_init,
+        global_timescale=0.1,
+        gamma=100,
+        d=None,
+        W=None,
+        name=None,
+        input_names=[],
+        output_names=[],
     ):
-        self.name=name
-        self.input_names: list[str] = input_names
-        self.output_names: list[str] = output_names
+        self.name = name
+        self.input_names = input_names
+        self.output_names = output_names
 
         self.A: np.ndarray = A
         self.B: np.ndarray = B
@@ -293,7 +303,9 @@ class Reservoir:
         return A, B, r_init, x_init, global_timescale, gamma
 
     @staticmethod
-    def mat2py(A, B, r_init, x_init, global_timescale, gamma, d=None, W=None) -> "Reservoir":
+    def mat2py(
+        A, B, r_init, x_init, global_timescale, gamma, d=None, W=None
+    ) -> "Reservoir":
         A = np.array(A, dtype=float)
         B = np.array(B, dtype=float)
         d = np.array(d, dtype=float) if d is not None else None

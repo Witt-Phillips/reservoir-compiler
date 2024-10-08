@@ -53,10 +53,13 @@ forward_dec = Prog(
     ]
 )
 
-graph: CGraph = Core(oscillator, verbose=False).compile_to_cgraph()
+graph: CGraph = Core(lorenz, verbose=False).compile_to_cgraph()
+
 # graph.print()
 # graph.draw()
 res = Resolver(graph, verbose=True).resolve()
+print("inputs: ", res.input_names)
+print("outputs: ", res.output_names)
 # res.print()
 inp = inputs.zeros(4000)
 outputs = res.run4input(inp)
@@ -70,3 +73,13 @@ plotters.plt_outputs(outputs, "oscillator", res.output_names)
 # plotters.plot_reservoir_matrices(res, "Lorenz Attractor")
 # plotters.three_d(outputs, "Lorenz Attractor")
 # plotters.three_d_input_output(outputs[:3, :], outputs[3:, :], "Lorenz Attractor")
+
+
+# for node in graph.graph.nodes:
+#     node = graph.get_node(node)
+#     print(node)
+#     if node["type"] == "reservoir":
+#         print("inputs: ", node["reservoir"].input_names)
+#         print("outputs: ", node["reservoir"].output_names)
+# if node["type"] == "reservoir":
+#     print("inputs: ", node["reservoir"].input_names)
