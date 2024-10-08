@@ -27,6 +27,8 @@ class Resolver:
         self._cleanup_reservoirs()
         self._combine_reservoirs(a)
         self._remove_ignored_inputs()
+
+        self._internalize_constant_inputs()
         # TODO: check input dims (make list of input names a reservoir member)
         # TODO: restrict output space to ret (make list of output names a reservoir member)
 
@@ -48,8 +50,6 @@ class Resolver:
                 dim += reservoir.A.shape[0]
                 self.res_idx_map[reservoir] = idx
                 idx += reservoir.A.shape[0]
-                if self.verbose:
-                    print(reservoir.name)
         return dim
 
     def _gen_composite_adjacency(self, dim) -> np.ndarray:
@@ -257,3 +257,49 @@ class Resolver:
                     break
             else:
                 i += 1
+
+    def _internalize_constant_inputs(self):
+        """Assumes self.reservoir has already been generated"""
+        to_remove = []
+        removed_indices = {"B": [], "x_init": []}
+
+        for idx, inp_name in enumerate(self.reservoir.input_names):
+            # Adjust indices before accessing arrays
+            adjusted_i_B = self._adjust_index("B", idx, removed_indices)
+            adjusted_i_x_init = self._adjust_index("x_init", idx, removed_indices)
+
+            node = self.graph.get_node(inp_name)
+            if node["value"] is not None:
+                # Update A using adjusted indices
+                b_col = self.reservoir.B[:, adjusted_i_B].reshape(-1, 1)
+                x_row = self.reservoir.x_init[adjusted_i_x_init, :].reshape(1, -1)
+                self.reservoir.d += b_col @ x_row
+
+                # Delete the adjusted index from B
+                if self.reservoir.B.shape[1] > 1:
+                    self.reservoir.B = np.delete(self.reservoir.B, adjusted_i_B, axis=1)
+                else:
+                    self.reservoir.B = np.zeros_like(self.reservoir.B)
+                # Record the removed index for B
+                removed_indices["B"].append(adjusted_i_B)
+
+                # Delete the adjusted index from x_init
+                if self.reservoir.x_init.shape[0] > 1:
+                    self.reservoir.x_init = np.delete(
+                        self.reservoir.x_init, adjusted_i_x_init, axis=0
+                    )
+                else:
+                    self.reservoir.x_init = np.zeros(
+                        (1, self.reservoir.x_init.shape[1])
+                    )
+                # Record the removed index for x_init
+                removed_indices["x_init"].append(adjusted_i_x_init)
+
+                # Add input name to remove list
+                to_remove.append(inp_name)
+
+        # Remove internalized input names
+        for inp_name in to_remove:
+            self.reservoir.input_names.remove(inp_name)
+            if self.verbose:
+                print(f"Internalized constant input: {inp_name}")

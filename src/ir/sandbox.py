@@ -46,22 +46,34 @@ oscillator = Prog(
 # Tests our ability to define a variable, h
 forward_dec = Prog(
     [
-        Expr(Opc.INPUT, [["i1", "i2"]]),
+        Expr(Opc.INPUT, [["i1", "i2", "i3"]]),
+        Expr(Opc.LET, [["i1"], 1.0]),
         Expr(Opc.LET, [["a"]]),
         Expr(Opc.LET, [["b"], Expr("NAND", ["a", "i2"])]),
-        Expr(Opc.LET, [["a"], Expr("NAND", ["b", "i1"])]),
+        Expr(Opc.LET, [["a"], Expr("NAND", ["i3", "i1"])]),
+        Expr(Opc.RET, ["b"]),
     ]
 )
 
-graph: CGraph = Core(lorenz, verbose=False).compile_to_cgraph()
+simple_constant_inputs = Prog(
+    [
+        Expr(Opc.INPUT, [["i1", "i2"]]),
+        Expr(Opc.LET, [["i1"], 1.0]),
+        Expr(Opc.LET, [["i2"], 1.0]),
+        Expr(Opc.LET, [["nando1"], Expr("NOR", ["i1", "i2"])]),
+        Expr(Opc.RET, [["nando1"]]),
+    ]
+)
 
-# graph.print()
+graph: CGraph = Core(simple_constant_inputs, verbose=False).compile_to_cgraph()
+graph.print()
 # graph.draw()
 res = Resolver(graph, verbose=True).resolve()
-print("inputs: ", res.input_names)
-print("outputs: ", res.output_names)
-# res.print()
-inp = inputs.zeros(4000)
+# print("inputs: ", res.input_names)
+# print("outputs: ", res.output_names)
+res.print()
+inp = np.zeros((1, 4000))
+# inp = inputs.high_low_inputs(4000)
 outputs = res.run4input(inp)
 plotters.plt_outputs(outputs, "oscillator", res.output_names)
 # plotters.plt_outputs(outputs, "lorenz", res.output_names)

@@ -27,6 +27,10 @@ class CGraph:
         # assert not self.graph.has_node(name), f"Node {name} already exists"
         if not self.graph.has_node(name):
             self.graph.add_node(name, type=node_type, **attrs)
+        else:
+            current_attrs = self.graph.nodes[name]  # Get current attributes
+            current_attrs.update(attrs)  # Update with new attrs
+            current_attrs["type"] = node_type
 
     def get_node(self, name: str):
         """
@@ -74,9 +78,9 @@ class CGraph:
         """
         return self.graph.edges
 
-    def add_input(self, name: str):
+    def add_input(self, name: str, val: float = None):
         """Adds an input node to the graph."""
-        self.add_node(name, "input")
+        self.add_node(name, "input", value=val)
 
     def make_return(self, name: str):
         """

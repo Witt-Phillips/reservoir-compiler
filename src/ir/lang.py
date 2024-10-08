@@ -24,10 +24,10 @@ class Opc(Enum):
 class Operand:
     """
     Operand: arguments passed to opcodes. Note their recursive
-    structre; they can take the form of expressions with their own operands.
+    structure; they can take the form of expressions with their own operands.
     """
 
-    operand: Union[list[str], str, "Expr"]
+    operand: Union[list[str], str, float, "Expr"]
 
 
 @dataclass

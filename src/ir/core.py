@@ -1,4 +1,5 @@
 from typing import Optional, Union, List, Tuple
+import numbers
 import numpy as np
 from ir.lang import Prog, Expr, Opc, Operand
 from cgraph.cgraph import CGraph
@@ -47,16 +48,39 @@ class Core:
                 return self._handle_custom_opcode(expr)
 
     def _handle_let(self, operands: List[Operand]) -> None:
+        #  Declaration without definition
         if len(operands) == 1:
             for name in operands[0]:
                 self.graph.add_var(name)
             return
 
+        # Bind float value to input
+        if isinstance(operands[1], numbers.Number):
+            val = float(operands[1])
+            name = operands[0][0]
+
+            assert (
+                name not in self.vars
+            ), f"Attempted to bind value to variable: {name} designated as reservoir output."
+
+            if name not in self.inps:
+                self.inps.add(name)
+                self.graph.add_input(name, val=val)
+            else:
+                node = self.graph.get_node(name)
+                node["value"] = val
+
+            if self.verbose:
+                print(f"Set input {name} to {val}")
+            return
+
+        # Bind reservoir to set of vars
         names, value = operands
         if self.verbose:
             print(f"LET expression with variables {names} and value {value}")
         # Strictest version, assume process_operand always returns a reservoir
         res: Reservoir = self._process_expr(value)
+
         if self.verbose:
             print(f"Processed LET value, resulting in reservoir: {res.name}")
 

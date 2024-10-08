@@ -2,7 +2,8 @@ import os
 import pickle as pkl
 import numpy as np
 import sympy as sp
-import matlab.engine
+
+# import matlab.engine
 
 """
 Reservoir Structure:
@@ -37,9 +38,9 @@ class Reservoir:
         input_names=[],
         output_names=[],
     ):
-        self.name = name
-        self.input_names = input_names
-        self.output_names = output_names
+        self.name: str = name
+        self.input_names: list[str] = input_names
+        self.output_names: list[str] = output_names
 
         self.A: np.ndarray = A
         self.B: np.ndarray = B
