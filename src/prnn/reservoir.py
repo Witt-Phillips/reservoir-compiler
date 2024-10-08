@@ -63,7 +63,7 @@ class Reservoir:
                 else np.zeros((A.shape[0], 1))
             )
         )
-        self.W = W
+        self.W: np.ndarray = W
 
         # for circuitry
         self.usedInputs = set()

@@ -85,8 +85,6 @@ class Core:
             print(f"Processed LET value, resulting in reservoir: {res.name}")
 
         for i, name in enumerate(names):
-            if name not in res.output_names:
-                res.output_names.append(name)
             if self.verbose:
                 print(
                     f"Binding variable {name} to reservoir output {res.name}, index {i}"
@@ -135,10 +133,6 @@ class Core:
         # Check operands
         operands = expr.operands
         for i, sym in enumerate(operands):
-            # put to outputs
-            if sym not in res.input_names:
-                res.input_names.append(sym)
-
             if self.verbose:
                 print(f"Processing operand {i}: {sym}")
             if (sym not in self.inps) and (sym not in self.vars):

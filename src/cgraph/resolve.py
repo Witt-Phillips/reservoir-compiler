@@ -16,22 +16,16 @@ class Resolver:
         self.graph = cgraph
         self.reservoir: Reservoir = None  # map of constituent reservoirs to idx in A
         self.res_idx_map = OrderedDict()
-        self.connections_to_clean = set()
         self.verbose = verbose
 
     def resolve(self) -> Reservoir:
-        # TODO: Populate adjacency
+        self._track_inp_out()
         dim = self._get_reservoirs()
         a = self._gen_composite_adjacency(dim)
         a = self._process_connections(a)
-        self._cleanup_reservoirs()
         self._combine_reservoirs(a)
         self._remove_ignored_inputs()
         self._internalize_constant_inputs()
-
-        # TODO: check input dims (make list of input names a reservoir member)
-        # TODO: restrict output space to ret (make list of output names a reservoir member)
-
         return self.reservoir
 
     def _get_reservoirs(self) -> int:
@@ -52,6 +46,27 @@ class Resolver:
                 idx += reservoir.A.shape[0]
         return dim
 
+    def _track_inp_out(self):
+        # Initialize input_names and output_names for each reservoir
+        for node_name in self.graph.all_nodes():
+            node = self.graph.get_node(node_name)
+            if node["type"] == "reservoir":
+                node["reservoir"].output_names = []
+                node["reservoir"].input_names = []
+
+        # Iterate through each connection (edge) in the graph
+        for src, dst in self.graph.graph.edges:
+            src_node = self.graph.get_node(src)
+            dst_node = self.graph.get_node(dst)
+
+            # If src is a reservoir, add dst to its outputs
+            if src_node["type"] == "reservoir":
+                src_node["reservoir"].output_names.append(dst)
+
+            # If dest is a reservoir, add src to its inputs
+            if dst_node["type"] == "reservoir":
+                dst_node["reservoir"].input_names.append(src)
+
     def _gen_composite_adjacency(self, dim) -> np.ndarray:
         """
         Generates a composite reservoir from the CGraph.
@@ -60,107 +75,42 @@ class Resolver:
         """
         a = np.zeros((dim, dim))
         for r, idx in self.res_idx_map.items():
+            r: Reservoir
             sz = r.A.shape[0]
             a[idx : idx + sz, idx : idx + sz] = r.A
         return a
 
     def _process_connections(self, a):
-        """
-        Processes the connections in the CGraph. Internalizes connections
-        and removes now-internalized rows and columns from W and B.
-        """
-        removed_indices = {}
-
         for var in self.graph.all_nodes():
             node = self.graph.get_node(var)
             if node["type"] != "var":
                 continue
 
-            # Get source and target reservoirs and indices
-            out_res, out_idx = self.graph.get_var_source(var)
-            in_res, in_idx = self.graph.get_var_target(var)
+            src_res, _ = self.graph.get_var_source(var)
+            tar_res, _ = self.graph.get_var_target(var)
+            src_res_idx = src_res.output_names.index(var)
+            tar_res_idx = tar_res.input_names.index(var)
 
-            print(in_res, var)
-
-            # Adjust indices if columns have been removed
-            out_idx = self._adjust_index(out_res, out_idx, removed_indices)
-            in_idx = self._adjust_index(in_res, in_idx, removed_indices)
-
-            self.connections_to_clean.add((out_res, out_idx, in_res, in_idx))
-
-            # remove internalized variable for reservoir input/ output lists
-            out_res.output_names.remove(var)
-            in_res.input_names.remove(var)
-
-            # Get rows and columns from W and B matrices
-            try:
-                w_row = out_res.W[out_idx - 1, :].reshape(1, -1)
-                b_col = in_res.B[:, in_idx - 1].reshape(-1, 1)
-            except IndexError as e:
-                raise ValueError(f"Index error when processing connection: {e}") from e
-
-            # Compute 'internalized' section of A
+            # Compute internalized section of A
+            w_row = src_res.W[src_res_idx, :].reshape(1, -1)
+            b_col = tar_res.B[:, tar_res_idx].reshape(-1, 1)
             sec = np.outer(b_col, w_row)
-            out_pos = self.res_idx_map[out_res]
-            in_pos = self.res_idx_map[in_res]
+            out_pos = self.res_idx_map[src_res]
+            in_pos = self.res_idx_map[tar_res]
             sec_rows, sec_cols = sec.shape
 
             # Insert section into comb_a at the correct location
             a[in_pos : in_pos + sec_rows, out_pos : out_pos + sec_cols] += sec
 
+            # cleanup removed connection
+            self._remove_res_input(tar_res, tar_res_idx)
+            self._remove_res_output(src_res, src_res_idx)
+
+            # cleanup removed connection
+            src_res.output_names.remove(var)
+            tar_res.input_names.remove(var)
+
         return a
-
-    def _adjust_index(self, res, idx, removed_indices):
-        """
-        Adjusts the index based on the number of removed columns.
-        """
-        if res not in removed_indices:
-            removed_indices[res] = []
-
-        for removed_idx in sorted(removed_indices[res]):
-            if idx > removed_idx:
-                idx -= 1
-
-        return idx
-
-    def _cleanup_reservoirs(self):
-        input_indices_to_remove = {}
-        output_indices_to_remove = {}
-
-        for out_res, out_idx, in_res, in_idx in self.connections_to_clean:
-            out_res: Reservoir
-            in_res: Reservoir
-
-            # Collect indices to remove
-            if in_res not in input_indices_to_remove:
-                input_indices_to_remove[in_res] = []
-            if out_res not in output_indices_to_remove:
-                output_indices_to_remove[out_res] = []
-
-            input_indices_to_remove[in_res].append(in_idx - 1)
-            output_indices_to_remove[out_res].append(out_idx - 1)
-
-        # Remove indices from B and W
-        for in_res, indices in input_indices_to_remove.items():
-            for idx in sorted(indices, reverse=True):
-                in_res.B = (
-                    np.delete(in_res.B, idx, axis=1)
-                    if in_res.B.shape[1] > 1
-                    else np.zeros_like(in_res.B)
-                )
-                in_res.x_init = (
-                    np.delete(in_res.x_init, idx, axis=0)
-                    if in_res.x_init.shape[0] > 1
-                    else np.zeros((1, 1))
-                )
-
-        for out_res, indices in output_indices_to_remove.items():
-            for idx in sorted(indices, reverse=True):
-                out_res.W = (
-                    np.delete(out_res.W, idx, axis=0)
-                    if out_res.W.shape[0] > 1
-                    else np.zeros((0, out_res.A.shape[0]))
-                )
 
     def _combine_reservoirs(self, a):
         """
@@ -213,12 +163,10 @@ class Resolver:
 
             # Update input and output names
             for name in res.input_names:
-                if name not in input_names:
-                    input_names.append(name)
+                input_names.append(name)
 
             for name in res.output_names:
-                if name not in output_names:
-                    output_names.append(name)
+                output_names.append(name)
 
         # Create and return a new combined Reservoir
         self.reservoir = Reservoir(
@@ -241,57 +189,38 @@ class Resolver:
         """
         Removes columns in B that correspond to zero entries in x_init for the combined reservoir.
         """
-        i = 0
-        while i < self.reservoir.B.shape[1]:
-
+        for i in reversed(range(self.reservoir.B.shape[1])):
             # Check if all elements in column i are zeros
             if np.all(self.reservoir.B[:, i] == 0):
-                if self.reservoir.B.shape[1] > 1:  # Remove column if not the last one
-                    # self.reservoir.input_names.pop(i)
-
-                    self.reservoir.B = np.delete(self.reservoir.B, i, axis=1)
-                    self.reservoir.x_init = np.delete(self.reservoir.x_init, i, axis=0)
-                else:  # If it's the last column, set to zeros
-                    self.reservoir.B = np.zeros_like(self.reservoir.B)
-                    self.reservoir.x_init = np.zeros((1, 1))
-                    break
-            else:
-                i += 1
+                self._remove_res_input(self.reservoir, i)
 
     def _internalize_constant_inputs(self):
-        """Assumes self.reservoir has already been generated"""
-        to_remove = []
-        removed_indices = {"B": [], "x_init": []}
-
-        for idx, inp_name in enumerate(self.reservoir.input_names):
-            adjusted_i_B = self._adjust_index("B", idx, removed_indices)
-            adjusted_i_x_init = self._adjust_index("x_init", idx, removed_indices)
-
+        # we reverse so we pop cols from the end to avoid index shifting
+        inp_names = self.reservoir.input_names.copy()
+        for idx, inp_name in reversed(list(enumerate(inp_names))):
             node = self.graph.get_node(inp_name)
             if node["value"] is not None:
-                b_col = self.reservoir.B[:, adjusted_i_B].reshape(-1, 1)
-                x_row = self.reservoir.x_init[adjusted_i_x_init, :].reshape(1, -1)
+                b_col = self.reservoir.B[:, idx].reshape(-1, 1)
+                x_row = self.reservoir.x_init[idx, :].reshape(1, -1)
                 self.reservoir.d += b_col @ x_row
+                self._remove_res_input(self.reservoir, idx)
 
-                if self.reservoir.B.shape[1] > 1:
-                    self.reservoir.B = np.delete(self.reservoir.B, adjusted_i_B, axis=1)
-                else:
-                    self.reservoir.B = np.zeros_like(self.reservoir.B)
-                removed_indices["B"].append(adjusted_i_B)
+    @staticmethod
+    def _remove_res_input(res: Reservoir, idx: int):
+        if res.B.shape[1] > 1:
+            res.B = np.delete(res.B, idx, axis=1)
+        else:
+            res.B = np.zeros_like(res.B)
 
-                if self.reservoir.x_init.shape[0] > 1:
-                    self.reservoir.x_init = np.delete(
-                        self.reservoir.x_init, adjusted_i_x_init, axis=0
-                    )
-                else:
-                    self.reservoir.x_init = np.zeros(
-                        (1, self.reservoir.x_init.shape[1])
-                    )
-                removed_indices["x_init"].append(adjusted_i_x_init)
+        if res.x_init.shape[0] > 1:
+            res.x_init = np.delete(res.x_init, idx, axis=0)
+        else:
+            res.x_init = np.zeros((1, res.x_init.shape[1]))
 
-                to_remove.append(inp_name)
-
-        for inp_name in to_remove:
-            self.reservoir.input_names.remove(inp_name)
-            if self.verbose:
-                print(f"Internalized constant input: {inp_name}")
+    @staticmethod
+    def _remove_res_output(res: Reservoir, idx: int):
+        res.W = (
+            np.delete(res.W, idx, axis=0)
+            if res.W.shape[0] > 1
+            else np.zeros((0, res.A.shape[0]))
+        )

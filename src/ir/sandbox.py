@@ -65,17 +65,17 @@ simple_constant_inputs = Prog(
     ]
 )
 
-graph: CGraph = Core(oscillator, verbose=False).compile_to_cgraph()
-graph.print()
+graph: CGraph = Core(lorenz, verbose=False).compile_to_cgraph()
+# graph.print()
 # graph.draw()
 res = Resolver(graph, verbose=True).resolve()
 # print("inputs: ", res.input_names)
 # print("outputs: ", res.output_names)
 # res.print()
-# inp = np.zeros((1, 4000))
+inp = np.zeros((1, 4000))
 # inp = inputs.high_low_inputs(4000)
-# outputs = res.run4input(inp)
-# plotters.plt_outputs(outputs, "oscillator", res.output_names)
+outputs = res.run4input(inp)
+plotters.plt_outputs(outputs, "oscillator", res.output_names)
 # plotters.plt_outputs(outputs, "lorenz", res.output_names)
 
 # TIME = 4000
