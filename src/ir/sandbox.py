@@ -65,9 +65,19 @@ simple_constant_inputs = Prog(
     ]
 )
 
-graph: CGraph = Core(lorenz, verbose=False).compile_to_cgraph()
+sr_latch = Prog(
+    [
+        Expr(Opc.INPUT, [["set", "reset"]]),
+        Expr(Opc.LET, [["r2"]]),
+        Expr(Opc.LET, [["Q", "r1"], Expr("NOR_DE", ["set", "r2"])]),
+        Expr(Opc.LET, [["Qp", "r2"], Expr("NOR_DE", ["reset", "r1"])]),
+        Expr(Opc.RET, [["Q", "Qp"]]),
+    ]
+)
+
+graph: CGraph = Core(oscillator, verbose=False).compile_to_cgraph()
 # graph.print()
-# graph.draw()
+graph.draw()
 res = Resolver(graph, verbose=True).resolve()
 # print("inputs: ", res.input_names)
 # print("outputs: ", res.output_names)
@@ -75,7 +85,17 @@ res = Resolver(graph, verbose=True).resolve()
 inp = np.zeros((1, 4000))
 # inp = inputs.high_low_inputs(4000)
 outputs = res.run4input(inp)
-plotters.plt_outputs(outputs, "oscillator", res.output_names)
+plotters.plt_outputs(outputs, "osc", res.output_names)
+# plotters.in_out_split(
+#     inp, outputs, "sr_latch", input_names=res.input_names, output_names=res.output_names
+# )
+
+# save preset
+# if 1:
+#     res.name = "sr_latch"
+#     res.save(res.name)
+
+# plotters.plt_outputs(outputs, "sr_latch", res.output_names)
 # plotters.plt_outputs(outputs, "lorenz", res.output_names)
 
 # TIME = 4000

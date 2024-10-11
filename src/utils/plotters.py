@@ -66,7 +66,7 @@ def plot_reservoir_matrices(reservoir, title_prefix="Reservoir Matrices"):
     plt.show()
 
 
-def in_out_split(inputs, outputs, title):
+def in_out_split(inputs, outputs, title, input_names=None, output_names=None):
     """2 plots; one with inputs, the other with outputs. Good for 2d"""
     if inputs.shape[1] != outputs.shape[1]:
         raise ValueError("plot: inputs and outputs must have equal length.")
@@ -77,7 +77,10 @@ def in_out_split(inputs, outputs, title):
     # signals
     plt.subplot(2, 1, 1)
     for i in range(inputs.shape[0]):
-        plt.plot(time, inputs[i, :], label=f"Signal {i+1}")
+        label = (
+            input_names[i] if input_names and i < len(input_names) else f"Signal {i+1}"
+        )
+        plt.plot(time, inputs[i, :], label=label)
 
     # Adding a 10% margin to y-limits for inputs
     inputs_min, inputs_max = np.min(inputs), np.max(inputs)
@@ -92,7 +95,12 @@ def in_out_split(inputs, outputs, title):
     # outputs
     plt.subplot(2, 1, 2)
     for j in range(outputs.shape[0]):
-        plt.plot(time, outputs[j, :], label=f"Output {j+1}")
+        label = (
+            output_names[j]
+            if output_names and j < len(output_names)
+            else f"Output {j+1}"
+        )
+        plt.plot(time, outputs[j, :], label=label)
 
     # Adding a 10% margin to y-limits for outputs
     outputs_min, outputs_max = np.min(outputs), np.max(outputs)

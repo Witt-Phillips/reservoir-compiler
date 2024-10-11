@@ -91,15 +91,13 @@ class Resolver:
             src_res_idx = src_res.output_names.index(var)
             tar_res_idx = tar_res.input_names.index(var)
 
-            # Compute internalized section of A
+            # Internalized section of A
             w_row = src_res.W[src_res_idx, :].reshape(1, -1)
             b_col = tar_res.B[:, tar_res_idx].reshape(-1, 1)
             sec = np.outer(b_col, w_row)
             out_pos = self.res_idx_map[src_res]
             in_pos = self.res_idx_map[tar_res]
             sec_rows, sec_cols = sec.shape
-
-            # Insert section into comb_a at the correct location
             a[in_pos : in_pos + sec_rows, out_pos : out_pos + sec_cols] += sec
 
             # cleanup removed connection

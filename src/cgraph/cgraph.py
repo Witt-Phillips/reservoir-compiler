@@ -114,6 +114,15 @@ class CGraph:
 
     def add_output(self, name: str):
         """Adds an output node to the graph."""
+        # check if overwriting input; if so, give _out tag
+        node = self.get_node(name)
+        if node:
+            if node["type"] == "var":
+                self.make_return(name)
+                return
+            elif node["type"] == "input":
+                name = name + "_out"
+
         self.add_node(name, "output")
 
     def add_edge(

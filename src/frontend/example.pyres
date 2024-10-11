@@ -1,0 +1,8 @@
+from frontend.stdlib import *
+
+def main(x):
+    y = 0.1
+    z = 0.1
+    a = nand(x, y)
+    b = nand(a, z)
+    return b

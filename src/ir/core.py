@@ -9,7 +9,7 @@ from prnn.reservoir import Reservoir
 
 class Core:
     """
-    Implements the core of the reservoir language compiler, compiling IR expressions -> NetworkX graph.
+    Implements the core of the reservoir language compiler, compiling IR expressions -> networkx graph.
     """
 
     uid = 0
@@ -113,21 +113,7 @@ class Core:
     def _handle_custom_opcode(self, expr: Expr) -> Reservoir:
         opcode = expr.op
         assert isinstance(opcode, str), "Custom opcode must be a string"
-        # assert opcode in rnn_lib, f"Opcode {opcode} not found in library"
 
-        """ inp_dim, out_dim, res_path = rnn_lib[opcode]
-        if self.verbose:
-            print(
-                f"Handling custom opcode: {opcode}, expected input dim: {inp_dim}, output dim: {out_dim}"
-            )
-
-        res = Reservoir.load(res_path).copy()
-        res.name = self._generate_uid()
-        self.graph.add_reservoir(res.name, reservoir=res)
-
-        if self.verbose:
-            print(f"Loaded reservoir from path {res_path}, assigned name {res.name}")
- """
         _, _, res = self._res_from_lib(opcode)
         self.graph.add_reservoir(res.name, reservoir=res)
         # Check operands

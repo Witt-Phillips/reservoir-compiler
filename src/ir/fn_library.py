@@ -8,6 +8,7 @@ rnn_lib = {
     "NAND_DE": (2, 2, "nand_de"),
     "NAND_TRIPLE": (2, 3, "nand_triple"),
     "NOR": (2, 1, "nor"),
+    "NOR_DE": (2, 2, "nor_de"),
     "LORENZ": (0, 3, "lorenz"),
     "ROTATE90": (3, 3, "rotation90"),
 }
