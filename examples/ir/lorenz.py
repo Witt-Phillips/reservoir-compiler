@@ -1,7 +1,7 @@
 """ A full stack example of the PRNN method & IR compilation"""
 
 import sympy as sp
-from prnn.reservoir import Reservoir
+from _prnn.reservoir import Reservoir
 
 """ 1. Define constituent reservoirs ------------------------------ """
 # Lorenz attractor
@@ -56,22 +56,22 @@ if False:
     graph.draw()
 
 """ 3. Resolve graph into a reservoir ------------------------------ """
-from cgraph.resolve import Resolver
+from _cgraph.resolve import Resolver
 
 res = Resolver(graph, verbose=True).resolve()
 
 """ 4. Run reservoir & plot outputs ------------------------------ """
-from utils.inputs import zeros
-from utils.plotters import three_d_input_output
+from _utils.inputs import zeros
+from _utils.plotters import three_d_input_output
 
 TIME = 4000
 inp = zeros(TIME)
-outputs = res.run4input(inp)
+outputs = res.run(inp)
 three_d_input_output(outputs[:3, :], outputs[3:, :], "RotatedLorenz Attractor")
 
 """ Other visualization options """
 
-from utils.plotters import plot_reservoir_matrices
+from _utils.plotters import plot_reservoir_matrices
 
 # Visualization the reservoir matrices
 if False:

@@ -1,7 +1,6 @@
-from prnn.reservoir import Reservoir
-from utils import inputs, plotters
-import sympy as sp
-from prnn.circuit import Circuit
+from _prnn.reservoir import Reservoir
+from _utils import inputs, plotters
+from _prnn.circuit import Circuit
 
 # Circuit configuration and generation.
 nand1: Reservoir = Reservoir.load("nand").doubleOutput(
@@ -27,6 +26,6 @@ circuitRes = circuit.connect()
 # Run for no input.
 time = 4000
 input_data = inputs.zeros(time)
-outputs = circuitRes.run4input(input_data)
+outputs = circuitRes.run(input_data)
 
 plotters.plt_outputs(outputs, "Procedurally Constructed Oscillator")

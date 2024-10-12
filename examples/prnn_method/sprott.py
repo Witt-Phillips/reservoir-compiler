@@ -1,4 +1,6 @@
-from examples.imports import Reservoir, inputs, plotters, sp
+from _prnn.reservoir import Reservoir
+from _utils import inputs, plotters
+import sympy as sp
 
 """ NOTE: currently broken, working on figuring out why. """
 
@@ -19,7 +21,7 @@ sprott_inputs = inputs.zeros(time)
 
 reservoir: Reservoir = Reservoir.solve(sprott_eqs)
 
-outputs = reservoir.run4input(sprott_inputs)
+outputs = reservoir.run(sprott_inputs)
 plotters.three_d(outputs, "sprott Attractor")
 
 # save preset

@@ -1,4 +1,6 @@
-from examples.imports import Reservoir, inputs, plotters, sp
+from _prnn.reservoir import Reservoir
+from _utils import inputs, plotters
+import sympy as sp
 
 o1, o2, o3 = sp.symbols("o1 o2 o3")
 
@@ -14,7 +16,7 @@ rossler_inputs = inputs.zeros(time)
 reservoir = Reservoir.solve(rossler_eqs)
 reservoir: Reservoir
 
-outputs = reservoir.run4input(rossler_inputs)
+outputs = reservoir.run(rossler_inputs)
 plotters.three_d(outputs, "Rossler Attractor")
 
 # save preset

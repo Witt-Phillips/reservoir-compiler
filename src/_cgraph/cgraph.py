@@ -1,8 +1,8 @@
 """ Graph class; target of IR core compiler """
 
 import networkx as nx
-from prnn.reservoir import Reservoir
 import matplotlib.pyplot as plt
+from _prnn.reservoir import Reservoir
 
 
 class CGraph:

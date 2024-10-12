@@ -2,9 +2,9 @@ from typing import Optional, Union, List, Tuple
 import numbers
 import numpy as np
 from ir.lang import Prog, Expr, Opc, Operand
-from cgraph.cgraph import CGraph
+from _cgraph.cgraph import CGraph
 from ir.fn_library import rnn_lib
-from prnn.reservoir import Reservoir
+from _prnn.reservoir import Reservoir
 
 
 class Core:

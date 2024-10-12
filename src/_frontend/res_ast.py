@@ -4,8 +4,11 @@ import ast as pyast
 class ASTGenerator:
     def __init__(self):
         self.allowed_nodes = {
+            # For imports
             pyast.ImportFrom,
+            pyast.Attribute,
             pyast.alias,
+            # Handled by pyres compiler
             pyast.Module,
             pyast.Expr,
             pyast.Assign,

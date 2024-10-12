@@ -1,10 +1,10 @@
 """ Resolves an CGraph into a Reservoir """
 
-from cgraph.cgraph import CGraph
-from prnn.reservoir import Reservoir
-import numpy as np
 from typing import List
 from collections import OrderedDict
+import numpy as np
+from _cgraph.cgraph import CGraph
+from _prnn.reservoir import Reservoir
 
 
 class Resolver:

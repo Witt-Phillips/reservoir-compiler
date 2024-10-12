@@ -5,9 +5,9 @@ Sandbox environment for the development of the ReservoirComiler IR
 import numpy as np
 from ir.lang import Prog, Expr, Opc
 from ir.core import Core
-from cgraph.cgraph import CGraph
-from cgraph.resolve import Resolver
-from utils import plotters, inputs
+from _cgraph.cgraph import CGraph
+from _cgraph.resolve import Resolver
+from _utils import plotters, inputs
 
 lorenz = Prog(
     [
@@ -84,7 +84,7 @@ res = Resolver(graph, verbose=True).resolve()
 # res.print()
 inp = np.zeros((1, 4000))
 # inp = inputs.high_low_inputs(4000)
-outputs = res.run4input(inp)
+outputs = res.run(inp)
 plotters.plt_outputs(outputs, "osc", res.output_names)
 # plotters.in_out_split(
 #     inp, outputs, "sr_latch", input_names=res.input_names, output_names=res.output_names
@@ -100,7 +100,7 @@ plotters.plt_outputs(outputs, "osc", res.output_names)
 
 # TIME = 4000
 # lorenz_inputs = inputs.zeros(TIME)
-# outputs = res.run4input(lorenz_inputs)
+# outputs = res.run(lorenz_inputs)
 # plotters.plot_matrix_heatmap(res.A)
 # plotters.plot_reservoir_matrices(res, "Lorenz Attractor")
 # plotters.three_d(outputs, "Lorenz Attractor")

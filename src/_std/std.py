@@ -1,6 +1,6 @@
-from prnn.reservoir import Reservoir
 from typing import Any, Callable, Dict, TypeVar
 from functools import wraps
+from _prnn.reservoir import Reservoir
 
 registry: Dict[str, str] = {}  # name, path to load
 
@@ -8,10 +8,10 @@ registry: Dict[str, str] = {}  # name, path to load
 F = TypeVar("F", bound=Callable[..., Any])
 
 
-def stdlib_function(name: str, path: str) -> Callable[[F], F]:
+def std_function(name: str, path: str) -> Callable[[F], F]:
     def decorator(func: F) -> F:
         if name in registry:
-            raise KeyError(f"Function '{name}' is already registered in stdlib.")
+            raise KeyError(f"Function '{name}' is already registered in std.")
         registry[name] = path
 
         @wraps(func)
@@ -26,7 +26,7 @@ def stdlib_function(name: str, path: str) -> Callable[[F], F]:
     return decorator
 
 
-@stdlib_function("nand", "nand")
+@std_function("nand", "nand")
 def nand(i1, i2) -> Reservoir:
     """Logical nand, where .1 -> True and -.1 -> False"""
     pass

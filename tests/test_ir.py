@@ -1,6 +1,6 @@
 import pytest
 from ir import *
-from prnn.circuit import Circuit
+from _prnn.circuit import Circuit
 
 
 def test_circuitify():

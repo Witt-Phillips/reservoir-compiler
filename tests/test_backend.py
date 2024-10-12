@@ -5,7 +5,8 @@ Runs full backend stack (sym eqs -> reservoir) and checks for well formedness.
 import pytest
 import numpy as np
 import sympy as sp
-from examples.imports import Reservoir, inputs
+from _prnn.reservoir import Reservoir
+
 
 def compare_reservoirs(res1: Reservoir, res2: Reservoir) -> bool:
     """

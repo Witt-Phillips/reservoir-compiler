@@ -1,5 +1,6 @@
 import numpy as np
-from examples.imports import Reservoir, inputs, plotters
+from _prnn.reservoir import Reservoir
+from _utils import inputs, plotters
 
 # define symbolic equations (naming is not constrained) -----------------
 nand_res: Reservoir = Reservoir.loadFile("nand")
@@ -41,7 +42,7 @@ W = nand_res.W
 # Run for no input.
 time = 7000
 input_data = inputs.zeros(time)
-radp = RAD.run4input(input_data, np.identity(3 * n))
+radp = RAD.run(input_data, np.identity(3 * n))
 
 # Find o=Wr
 outputs = np.vstack(

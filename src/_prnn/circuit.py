@@ -1,7 +1,7 @@
 """ Circuit class and methods """
 
 import numpy as np
-from prnn.reservoir import Reservoir
+from _prnn.reservoir import Reservoir
 
 
 class Circuit:

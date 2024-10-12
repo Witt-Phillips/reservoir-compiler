@@ -2,8 +2,7 @@ import os
 import pickle as pkl
 import numpy as np
 import sympy as sp
-
-# import matlab.engine
+import matlab.engine
 
 """
 Reservoir Structure:
@@ -128,9 +127,9 @@ class Reservoir:
         eng = matlab.engine.start_matlab()
         if verbose:
             print("* matlab engine started")
-
-        eng.addpath(r"src/prnn/matlab_dependencies", nargout=0)
-        eng.cd(r"src/prnn/matlab_dependencies", nargout=0)
+        path = r"src/_prnn/matlab_dependencies"
+        eng.addpath(path, nargout=0)
+        eng.cd(path, nargout=0)
         if verbose:
             print("* added scripts to matlab path")
 
@@ -188,11 +187,11 @@ class Reservoir:
         self.r = self.r + (k1 + (2 * k2) + 2 * (k3 + k4)) / 6
         return self.r
 
-    def run4input(self, inputs, W=None, verbose=False):
+    def run(self, inputs, W=None, verbose=False):
         W = W if W is not None else self.W
         if W is None:
             return ValueError(
-                "run4input: W must be defined, either by argument or in reservoir object"
+                "run: W must be defined, either by argument or in reservoir object"
             )
 
         # Ensure inputs are 4 dimensinoal on z axis
@@ -221,7 +220,7 @@ class Reservoir:
     Rsvr Files: pickles a reservoir and saves it to the src/presets dir
     """
 
-    def save(self, filename, directory="./src/presets"):
+    def save(self, filename, directory="src/_std/presets"):
 
         # check dir exists
         if not os.path.exists(directory):
@@ -242,7 +241,7 @@ class Reservoir:
             raise FileNotFoundError("error: save: dumped file, then couldn't find it")
 
     @classmethod
-    def load(cls, filename, directory="./src/presets") -> "Reservoir":
+    def load(cls, filename, directory="src/_std/presets") -> "Reservoir":
         filepath = os.path.join(directory, f"{filename}.rsvr")
 
         # check dir exists

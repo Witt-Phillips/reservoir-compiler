@@ -1,11 +1,10 @@
 import ast
 import re
 from typing import List, Tuple
-from cgraph.cgraph import CGraph
-from prnn.reservoir import Reservoir
-from cgraph.resolve import Resolver
-
-from frontend.stdlib import registry
+from _cgraph.cgraph import CGraph
+from _prnn.reservoir import Reservoir
+from _cgraph.resolve import Resolver
+from _std.std import registry
 
 
 class FnInfo:
@@ -29,7 +28,8 @@ class ASTCompiler(ast.NodeVisitor):
         """Takes source code and attempts to resolve it to a reservoir.
         Returns None on failure.
         """
-        print(ast.dump(prog_ast, indent=4))
+        if self.verbose:
+            print(ast.dump(prog_ast, indent=4))
         self.visit(prog_ast)
 
         # TODO: resolution loop: attempt to
@@ -99,7 +99,7 @@ class ASTCompiler(ast.NodeVisitor):
         for stmt in node.body:
             self._process_statement(stmt)
 
-        self.funcs[fn_name].graph.print()
+        # self.funcs[fn_name].graph.print()
 
     def visit_Return(self, node: ast.Return):
         """Return statements determine which variables become outputs
@@ -161,10 +161,13 @@ class ASTCompiler(ast.NodeVisitor):
         return node.value
 
     def visit_Call(self, node: ast.Call) -> str:
-        res_name = self.uid_of_name(node.func.id)
+        func_name = node.func.id if isinstance(node.func, ast.Name) else node.func.attr
+
+        res_name = self.uid_of_name(func_name)
         self.funcs[self.curr_fn].graph.add_reservoir(res_name, None)
 
-        print(f"Calling function {res_name}")
+        if self.verbose:
+            print(f"Calling function {res_name}")
 
         for i, arg in enumerate(node.args):
             match arg:

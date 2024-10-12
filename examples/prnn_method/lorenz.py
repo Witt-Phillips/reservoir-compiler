@@ -1,6 +1,6 @@
 # from examples.imports import Reservoir, inputs, plotters, sp
-from prnn.reservoir import Reservoir
-from utils import inputs, plotters
+from _prnn.reservoir import Reservoir
+from _utils import inputs, plotters
 import sympy as sp
 
 o1, o2, o3 = sp.symbols("o1 o2 o3")
@@ -16,7 +16,7 @@ lorenz_inputs = inputs.zeros(time)
 
 reservoir: Reservoir = Reservoir.solve(lorenz_eqs)
 reservoir.print()
-outputs = reservoir.run4input(lorenz_inputs)
+outputs = reservoir.run(lorenz_inputs)
 plotters.three_d(outputs, "Lorenz Attractor")
 
 # save preset

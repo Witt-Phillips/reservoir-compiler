@@ -1,0 +1,14 @@
+from pyres import std
+
+
+def foo(y):
+    t = 0.1
+    d = std.nand(t, y)
+    return d
+
+
+def main(x):
+    y = 0.1
+    a = std.nand(x, y)
+    b = foo(a)
+    return b

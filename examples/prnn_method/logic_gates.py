@@ -1,4 +1,6 @@
-from examples.imports import Reservoir, inputs, plotters, sp
+from _prnn.reservoir import Reservoir
+from _utils import inputs, plotters
+import sympy as sp
 
 verbose = False
 o1, s1, s2 = sp.symbols("o1 s1 s2")
@@ -20,7 +22,7 @@ logic = {
     "xnor": 0.0 + (s1) * (s2) / xf,
 }
 
-currentlyRunning = "and"
+currentlyRunning = "or"
 logic_eqs = [
     sp.Eq(o1, 0.1 * (pitchfork_bifurcation + logic[currentlyRunning])),
 ]
@@ -34,7 +36,7 @@ if verbose:
         print(sp.octave_code(eq))
 
 # run network forward
-outputs = reservoir.run4input(logic_inputs)
+outputs = reservoir.run(logic_inputs)
 plotters.in_out_split(logic_inputs, outputs, currentlyRunning + " Gate")
 
 # save preset

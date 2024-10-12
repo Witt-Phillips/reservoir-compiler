@@ -1,8 +1,7 @@
 # from examples.imports import Reservoir, inputs, plotters, sp
-from prnn.reservoir import Reservoir
-from utils import inputs, plotters
-import sympy as sp
-from prnn.circuit import Circuit
+from _prnn.reservoir import Reservoir
+from _utils import inputs, plotters
+from _prnn.circuit import Circuit
 
 rotation_res: Reservoir = Reservoir.load("rotation90")
 lorenz_res: Reservoir = Reservoir.load("lorenz")
@@ -20,7 +19,7 @@ rotated_lorenz_res = Circuit(
 ).connect()
 
 lorenz_inputs = inputs.zeros(4000)
-og_outputs = lorenz_res.run4input(lorenz_inputs)
-rot_outputs = rotated_lorenz_res.run4input(lorenz_inputs)
+og_outputs = lorenz_res.run(lorenz_inputs)
+rot_outputs = rotated_lorenz_res.run(lorenz_inputs)
 plotters.plot_reservoir_matrices(rotated_lorenz_res, "Rotated Lorenz")
 # plotters.three_d_input_output(og_outputs, rot_outputs, "Circuit: Lorenz -> Rotation")

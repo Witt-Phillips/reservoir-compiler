@@ -1,5 +1,5 @@
-from prnn.reservoir import Reservoir
-from utils import inputs, plotters
+from _prnn.reservoir import Reservoir
+from _utils import inputs, plotters
 import sympy as sp
 
 verbose = False
@@ -37,7 +37,7 @@ if verbose:
         print(sp.octave_code(eq))
 
 # run network forward
-outputs = reservoir.run4input(logic_inputs)
+outputs = reservoir.run(logic_inputs)
 plotters.in_out_split(logic_inputs, outputs, currentlyRunning + " Gate")
 
 # save preset
