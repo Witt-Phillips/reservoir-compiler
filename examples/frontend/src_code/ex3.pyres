@@ -1,0 +1,6 @@
+from pyres import std
+
+
+def main():
+    o1, o2, o3 = std.lorenz()
+    return o1, o2, o3

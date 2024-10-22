@@ -48,7 +48,9 @@ class Reservoir:
             r_init if r_init is not None else np.zeros((A.shape[0], 1))
         )
         self.r: np.ndarray = r if r is not None else np.zeros((A.shape[0], 1))
-        self.x_init: np.ndarray = x_init
+
+        assert isinstance(x_init, np.ndarray), "x_init must be an array"
+        self.x_init: np.ndarray = x_init.reshape(-1, 1)
         self.global_timescale: float = global_timescale
         self.gamma: float = gamma
 

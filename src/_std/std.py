@@ -34,11 +34,16 @@ def nand(x, y) -> Reservoir:
 
 @std_function("fan", "fan")
 def fan(x) -> Reservoir:
-    """fanout: o1 == o2 == x"""
+    """fanout: o1 == o2 == x. TODO: broken!"""
     pass
 
 
 @std_function("nor3", "nor_triple")
 def nor3(x, y) -> Reservoir:
     """logical nor: .1 -> True and -.1 -> False. Tripled output"""
+    pass
+
+@std_function("lorenz", "lorenz")
+def lorenz(x, y) -> Reservoir:
+    """lorenz series"""
     pass

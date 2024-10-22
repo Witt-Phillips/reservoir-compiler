@@ -20,7 +20,7 @@ outputs = reservoir.run(lorenz_inputs)
 plotters.three_d(outputs, "Lorenz Attractor")
 
 # save preset
-if 0:
+if 1:
     name = "lorenz"
     reservoir.save(name)
     res = Reservoir.load(name)
