@@ -160,8 +160,6 @@ class ASTCompiler(ast.NodeVisitor):
                         if isinstance(elt, ast.Name):
                             vars.append(elt.id)
 
-        print("vars:", vars)
-
         # process rhs expr and bind to vars
         cexpr = self._processs_expr(node.value)
         match cexpr:

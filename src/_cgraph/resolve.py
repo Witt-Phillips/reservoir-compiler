@@ -129,7 +129,6 @@ class Resolver:
         b_row, b_col, w_row, w_col = 0, 0, 0, 0
 
         for res in self.res_idx_map.keys():
-            res.print()
             res: Reservoir
             b, w = res.B, res.W
             b_r, b_c = b.shape
