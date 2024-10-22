@@ -118,7 +118,7 @@ class Resolver:
         """
         # Initialize empty arrays for stacking and diagonal placement
         x_all = np.zeros((0, 1))
-        r_all = np.zeros((0, 1))
+        r_init_all = np.zeros((0, 1))
         d_all = np.zeros((0, 1))
         b_comb = np.zeros((0, 0))
         w_comb = np.zeros((0, 0))
@@ -129,6 +129,7 @@ class Resolver:
         b_row, b_col, w_row, w_col = 0, 0, 0, 0
 
         for res in self.res_idx_map.keys():
+            res.print()
             res: Reservoir
             b, w = res.B, res.W
             b_r, b_c = b.shape
@@ -156,7 +157,7 @@ class Resolver:
 
             # Stack x_init, r_init, and d
             x_all = np.vstack([x_all, res.x_init])
-            r_all = np.vstack([r_all, res.r_init])
+            r_init_all = np.vstack([r_init_all, res.r_init])
             d_all = np.vstack([d_all, res.d])
 
             # Update input and output names
@@ -166,13 +167,28 @@ class Resolver:
             for name in res.output_names:
                 output_names.append(name)
 
+            """ # Create and return a new combined Reservoir
+            self.reservoir = Reservoir(
+                A=res.A,
+                B=res.B,
+                W=res.W,
+                x_init=res.x_init,
+                r_init=res.r_init,
+                # r=r_all,
+                d=res.d,
+                global_timescale=0.001,
+                gamma=100,
+                input_names=input_names,
+                output_names=output_names,
+            ) """
+
         # Create and return a new combined Reservoir
         self.reservoir = Reservoir(
             A=a,
             B=b_comb,
             W=w_comb,
             x_init=x_all,
-            r_init=r_all,
+            r_init=r_init_all,
             d=d_all,
             global_timescale=0.001,
             gamma=100,
@@ -193,14 +209,14 @@ class Resolver:
                 self._remove_res_input(self.reservoir, i)
 
     def _internalize_constant_inputs(self):
-        # we reverse so we pop cols from the end to avoid index shifting
         inp_names = self.reservoir.input_names.copy()
+
+        # reverse to avoid index shifting
         for idx, inp_name in reversed(list(enumerate(inp_names))):
             node = self.graph.get_node(inp_name)
             if node["value"] is not None:
                 b_col = self.reservoir.B[:, idx].reshape(-1, 1)
-                x_row = self.reservoir.x_init[idx, :].reshape(1, -1)
-                self.reservoir.d += b_col @ x_row
+                self.reservoir.d += b_col * node["value"]
                 self._remove_res_input(self.reservoir, idx)
 
     @staticmethod

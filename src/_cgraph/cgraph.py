@@ -231,3 +231,54 @@ class CGraph:
         plt.title("Graph Visualization", fontsize=14)
         plt.tight_layout(pad=2)  # Adjust layout for better spacing
         plt.show()
+
+    def validate(self):
+        """
+        Validates the structure of the graph by ensuring:
+        - Input nodes have exactly one output.
+        - Output nodes have exactly one input.
+        - Variable nodes have exactly one input and one output.
+        - Reservoir nodes maintain valid input/output indices.
+        """
+        for node, data in self.graph.nodes(data=True):
+            node_type = data["type"]
+
+            if node_type == "input":
+                # Input nodes should have exactly one outgoing edge
+                if self.graph.out_degree(node) != 1:
+                    raise ValueError(f"Input node {node} must have exactly one output.")
+                if self.graph.in_degree(node) != 0:
+                    raise ValueError(f"Input node {node} should not have any inputs.")
+
+            elif node_type == "output":
+                # Output nodes should have exactly one incoming edge
+                if self.graph.in_degree(node) != 1:
+                    raise ValueError(f"Output node {node} must have exactly one input.")
+                if self.graph.out_degree(node) != 0:
+                    raise ValueError(f"Output node {node} should not have any outputs.")
+
+            elif node_type == "var":
+                # Variable nodes should have exactly one incoming and one outgoing edge
+                if self.graph.in_degree(node) != 1:
+                    raise ValueError(
+                        f"Variable node {node} must have exactly one input."
+                    )
+                if self.graph.out_degree(node) != 1:
+                    raise ValueError(
+                        f"Variable node {node} must have exactly one output."
+                    )
+
+            elif node_type == "reservoir":
+                # Reservoir nodes can have multiple inputs/outputs but must have valid indices
+                for predecessor in self.graph.predecessors(node):
+                    edge_data = self.graph.get_edge_data(predecessor, node)
+                    if edge_data["input_idx"] is None:
+                        raise ValueError(
+                            f"Edge from {predecessor} to reservoir {node} missing input index."
+                        )
+                for successor in self.graph.successors(node):
+                    edge_data = self.graph.get_edge_data(node, successor)
+                    if edge_data["output_idx"] is None:
+                        raise ValueError(
+                            f"Edge from reservoir {node} to {successor} missing output index."
+                        )

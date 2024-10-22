@@ -22,12 +22,15 @@ logic = {
     "xnor": 0.0 + (s1) * (s2) / xf,
 }
 
-currentlyRunning = "or"
+currentlyRunning = "nand"
 logic_eqs = [
     sp.Eq(o1, 0.1 * (pitchfork_bifurcation + logic[currentlyRunning])),
 ]
 
-logic_inputs = inputs.high_low_inputs(4000)
+# logic_inputs = inputs.high_low_inputs(4000)
+import numpy as np
+
+logic_inputs = np.zeros((2, 4000))
 reservoir = Reservoir.solve(logic_eqs)
 reservoir: Reservoir
 
@@ -40,6 +43,6 @@ outputs = reservoir.run(logic_inputs)
 plotters.in_out_split(logic_inputs, outputs, currentlyRunning + " Gate")
 
 # save preset
-if 1:
+if 0:
     reservoir.save(currentlyRunning)
     res = Reservoir.load(currentlyRunning)

@@ -4,6 +4,7 @@ setup(
     name="reservoir-compiler",
     version="0.1",
     packages=find_packages(where="src"),
+    url="https://github.com/Witt-Phillips/reservoir-compiler",
     package_dir={"": "src"},
     python_requires=">=3.11",
     install_requires=[

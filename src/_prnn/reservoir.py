@@ -36,6 +36,7 @@ class Reservoir:
         name=None,
         input_names=[],
         output_names=[],
+        r=None,
     ):
         self.name: str = name
         self.input_names: list[str] = input_names
@@ -46,7 +47,7 @@ class Reservoir:
         self.r_init: np.ndarray = (
             r_init if r_init is not None else np.zeros((A.shape[0], 1))
         )
-        self.r: np.ndarray = np.zeros((A.shape[0], 1))
+        self.r: np.ndarray = r if r is not None else np.zeros((A.shape[0], 1))
         self.x_init: np.ndarray = x_init
         self.global_timescale: float = global_timescale
         self.gamma: float = gamma
@@ -164,14 +165,14 @@ class Reservoir:
     Engine: run a network forward
     """
 
-    def del_r(self, r, x):
+    def del_r(self, r: np.ndarray, x: np.ndarray) -> np.ndarray:
         # Ensure r and x are column vectors
         r = r.reshape(-1, 1)
         x = x.reshape(-1, 1)
         dr = self.gamma * (-r + np.tanh(self.A @ r + self.B @ x + self.d))
         return dr
 
-    def propagate(self, x):
+    def propagate(self, x: np.ndarray):
         # x is expected to be a 3D array with shape (n, 1, 4)
         x = x.reshape(-1, 1, 4)  # Ensure x is in the correct shape
 
@@ -187,14 +188,27 @@ class Reservoir:
         self.r = self.r + (k1 + (2 * k2) + 2 * (k3 + k4)) / 6
         return self.r
 
-    def run(self, inputs, W=None, verbose=False):
+    def run(self, inputs: np.ndarray = None, time=None, W=None, verbose=False):
+        # user specified W case
         W = W if W is not None else self.W
-        if W is None:
-            return ValueError(
-                "run: W must be defined, either by argument or in reservoir object"
-            )
+        assert (
+            W is not None
+        ), "error: run: W must be defined, either by argument or in reservoir object"
 
-        # Ensure inputs are 4 dimensinoal on z axis
+        # void input case
+        if inputs is None:
+            assert (
+                time is not None
+            ), "error: run: if reservoir has no inputs, run requires 'time' argument"
+            assert np.all(
+                self.B == 0
+            ), "error: in void input case, B must be a vector or matrix of zeros"
+            assert (
+                np.sum(self.x_init == 0) == 1
+            ), "error: input void input case, x must contain exactly one zero"
+            inputs = np.zeros((1, time))
+
+        # Ensure 4 dim inputs on z axis
         inputs = inputs.reshape(inputs.shape[0], inputs.shape[1], 1)
         inputs = np.repeat(inputs, 4, axis=2)
 

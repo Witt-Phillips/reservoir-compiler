@@ -26,6 +26,7 @@ currentlyRunning = "nor"
 logic_eqs = [
     sp.Eq(o1, 0.1 * (pitchfork_bifurcation + logic[currentlyRunning])),
     sp.Eq(o2, o1),
+    sp.Eq(o3, o1),
 ]
 
 logic_inputs = inputs.high_low_inputs(4000)
@@ -42,6 +43,6 @@ plotters.in_out_split(logic_inputs, outputs, currentlyRunning + " Gate")
 
 # save preset
 if 1:
-    reservoir.save(f"{currentlyRunning}_double")
-    res = Reservoir.load(f"{currentlyRunning}_double")
+    reservoir.save(f"{currentlyRunning}_triple")
+    # res = Reservoir.load(f"{currentlyRunning}_double")
     res: Reservoir

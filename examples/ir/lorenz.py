@@ -13,6 +13,10 @@ lorenz_eqs = [
     sp.Eq(o3, 20 * o1 * o2 - 4 / 15 * o3 - 0.036),
 ]
 
+""" 
+1. Figure out order
+ """
+
 lorenz_res = Reservoir.solve(lorenz_eqs)
 print("Solved Lorenz")
 

@@ -27,6 +27,18 @@ def std_function(name: str, path: str) -> Callable[[F], F]:
 
 
 @std_function("nand", "nand")
-def nand(i1, i2) -> Reservoir:
-    """Logical nand, where .1 -> True and -.1 -> False"""
+def nand(x, y) -> Reservoir:
+    """logical nand: .1 -> True and -.1 -> False"""
+    pass
+
+
+@std_function("fan", "fan")
+def fan(x) -> Reservoir:
+    """fanout: o1 == o2 == x"""
+    pass
+
+
+@std_function("nor3", "nor_triple")
+def nor3(x, y) -> Reservoir:
+    """logical nor: .1 -> True and -.1 -> False. Tripled output"""
     pass
