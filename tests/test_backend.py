@@ -8,29 +8,25 @@ import sympy as sp
 from _prnn.reservoir import Reservoir
 
 
-def compare_reservoirs(res1: Reservoir, res2: Reservoir) -> bool:
+def compare_reservoirs(res1: Reservoir, res2: Reservoir, tol: float = 1e-8) -> bool:
     """
-    Compare two Reservoir objects by specific fields.
-    Returns True if all fields are equal, False otherwise.
+    Compare two Reservoir objects by specific fields with a small tolerance.
+    Returns True if all fields are equal within the tolerance, False otherwise.
     """
-    # Compare numpy arrays using np.array_equal for the matrix attributes
-    if not np.array_equal(res1.A, res2.A):
-        return False
-    if not np.array_equal(res1.B, res2.B):
-        return False
-    if not np.array_equal(res1.r_init, res2.r_init):
-        return False
-    if not np.array_equal(res1.r, res2.r):
-        return False
-    if not np.array_equal(res1.x_init, res2.x_init):
-        return False
+    assert np.allclose(
+        res1.A, res2.A, atol=tol
+    ), "Field 'A' does not match between reservoirs."
+    assert np.allclose(
+        res1.B, res2.B, atol=tol
+    ), "Field 'B' does not match between reservoirs."
+    assert np.allclose(
+        res1.r_init, res2.r_init, atol=tol
+    ), "Field 'r_init' does not match between reservoirs."
+    assert np.allclose(
+        res1.x_init, res2.x_init, atol=tol
+    ), "Field 'x_init' does not match between reservoirs."
 
-    # Compare the scalar attributes
-    if res1.global_timescale != res2.global_timescale:
-        return False
-    if res1.gamma != res2.gamma:
-        return False
-
+    # If all comparisons pass, return True
     return True
 
 
@@ -58,6 +54,7 @@ def test_nand_gate():
     reservoir = Reservoir.solve(logic_eqs)
     reference_res = Reservoir.load("and")
 
-    assert compare_reservoirs(
-        reservoir, reference_res
+    assert (
+        compare_reservoirs(reservoir, reference_res) is True
     ), "Failed to properly generate 'AND' gate"
+

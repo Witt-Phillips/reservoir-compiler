@@ -1,5 +1,6 @@
 import ast
 import re
+import time
 from typing import List, Tuple
 from _cgraph.cgraph import CGraph
 from _prnn.reservoir import Reservoir
@@ -29,12 +30,26 @@ class FnInfo:
 
 
 class ASTCompiler(ast.NodeVisitor):
-    def __init__(self, verbose=False):
+    def __init__(self, verbose=False, track_time=False):
         self.uid_ct = 0
         self.funcs: dict[str, FnInfo] = {}
         self.verbose: bool = verbose
+        self.track_time = track_time
+        self.time_data = {}
         # Per function
         self.curr_fn: str = None
+
+    def _start_timer(self, key: str):
+        """Start timer for a given key."""
+        if self.track_time:
+            self.time_data[key] = time.time()
+
+    def _end_timer(self, key: str):
+        """End timer for a given key and log duration."""
+        if self.track_time and key in self.time_data:
+            elapsed_time = time.time() - self.time_data[key]
+            print(f"{key} took {elapsed_time:.4f} seconds")
+            self.time_data[key] = elapsed_time
 
     def compile(self, prog_ast: ast.Module) -> Reservoir:
         """Takes source code and attempts to resolve it to a reservoir.
@@ -42,7 +57,15 @@ class ASTCompiler(ast.NodeVisitor):
         """
         if self.verbose:
             print(ast.dump(prog_ast, indent=4))
+
+        if self.track_time:
+            print()
+            self._start_timer("traverse ast")
+
         self.visit(prog_ast)
+
+        if self.track_time:
+            self._end_timer("traverse ast")
 
         for fn in self.funcs:
             self.funcs[fn].graph.validate()
@@ -54,6 +77,9 @@ class ASTCompiler(ast.NodeVisitor):
                 graph = self.funcs[fn].graph
                 graph.draw()
                 graph.print()
+
+        if self.track_time:
+            self._start_timer("global resolution loop")
 
         # resolve every function's cgraph to a reservoir
         made_resolution = True
@@ -88,11 +114,22 @@ class ASTCompiler(ast.NodeVisitor):
                 # If all constituent reservoirs in the graph have been resovled, resolve the graph
                 if unresolved_res_ct == 0:
                     self.funcs[fn].graph
+
+                    if self.track_time:
+                        self._start_timer(f"resolve {fn}")
+
                     self.funcs[fn].res = Resolver(self.funcs[fn].graph).resolve()
+
+                    if self.track_time:
+                        self._end_timer(f"resolve {fn}")
+
                     # TODO: make name tracking entirely graph based
                     self.funcs[fn].res.input_names = self.funcs[fn].inputs
                     self.funcs[fn].res.output_names = self.funcs[fn].outputs
                     made_resolution = True
+
+        if self.track_time:
+            self._end_timer("global resolution loop")
 
         if "main" not in self.funcs:
             raise ValueError("Couldn't find 'main' function")
@@ -126,9 +163,6 @@ class ASTCompiler(ast.NodeVisitor):
         for stmt in node.body:
             self._process_statement(stmt)
 
-    # TODO: what should return handle? Pyhton way: a tuple of outputs?
-    # So we just enforce that you have to bind an expression to values before you return
-    # them? Or do we allow returning arbitrary expressions?
     def visit_Return(self, node: ast.Return) -> None:
         """Return statements determine which variables become outputs
         ASSUMES: arguments to return are of name type.

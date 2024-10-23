@@ -2,8 +2,5 @@ from pyres import std
 
 
 def main(i1, i2):
-    t1 = std.nand(i1, i2)
-    # t2 = std.nand(t1, 0.1)
-    o1, o2 = std.fan(t1)
-    # o1, o2, = std.fan(i1)
-    return o1, o2
+    t = std.nand(i1, i2)
+    return t
