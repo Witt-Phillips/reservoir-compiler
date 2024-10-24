@@ -38,6 +38,11 @@ def nand(x, y) -> Reservoir:
     """logical nand: .1 -> True and -.1 -> False"""
     pass
 
+@std_function("std_and", "and", inp_dim=2, out_dim=1)
+def std_and(x, y) -> Reservoir:
+    """logical nand: .1 -> True and -.1 -> False"""
+    pass
+
 
 @std_function("fan", "fan", inp_dim=1, out_dim=2)
 def fan(x) -> Reservoir:

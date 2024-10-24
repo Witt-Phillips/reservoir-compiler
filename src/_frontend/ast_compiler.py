@@ -88,7 +88,6 @@ class ASTCompiler(ast.NodeVisitor):
 
                     if node["reservoir"] is None:
                         # check in stdlib
-                        print(f"found unresolved reservoir {fn_name}")
                         if fn_name in registry:
                             if self.verbose:
                                 print(f"res loop: found {fn_name} in registry")
@@ -178,56 +177,34 @@ class ASTCompiler(ast.NodeVisitor):
         for stmt in node.body:
             self._process_statement(stmt)
 
-    # TODO: allow us to return an expression (cvec of variables only?)
     def visit_Return(self, node: ast.Return) -> None:
-        """Return statements determine which variables become outputs
-        ASSUMES: arguments to return are of name type.
-        TODO: Add support for returning constants?
+        """
+        Return statements determine which variables become outputs
+        Assumes arguments to return are of name type.
         """
         match node.value:
             case ast.Tuple():
                 vars = cvec([])
                 for elt in node.value.elts:
-                    var_cvec = self._processs_expr(elt)
+                    var_cvec = self._process_expr(elt)
                     vars.extend(var_cvec)
-
-                print("vars", vars)
             case _:
-                vars = self._processs_expr(node.value)
-                print("in else case")
-                print("vars: ", vars)
+                vars = self._process_expr(node.value)
 
         self.funcs[self.curr_fn].out_dim = len(vars)
 
         for var in vars:
             match var:
                 case str():
-                    print(f"adding var {var} to outputs")
                     self.funcs[self.curr_fn].graph.add_output(var)
                     self.funcs[self.curr_fn].outputs.append(var)
                     if self.verbose:
                         print(f"returning: {var}")
                 case _:
-                    ValueError(
+                    raise ValueError(
                         f"Pyres only supports returning variables. Attempted to return f{var}"
                     )
 
-        """   value: ast.AST = node.value
-        values = [node.value] if isinstance(node.value, ast.Name) else node.value.elts
-        self.funcs[self.curr_fn].out_dim = len(values)
-        for value in values:
-            match value:
-                case ast.Name():
-                    name = value.id
-                    self.funcs[self.curr_fn].graph.add_output(name)
-                    self.funcs[self.curr_fn].outputs.append(name)
-                    if self.verbose:
-                        print(f"returning: {name}")
-                case _:
-                    ValueError("return: attempted to return unsupported type") """
-
-    # TODO: match cvec against none
-    # TODO: check
     def visit_Assign(self, node: ast.Assign) -> None:
         # get variable names as a list of variable names
         vars = []
@@ -242,7 +219,9 @@ class ASTCompiler(ast.NodeVisitor):
                             vars.append(elt.id)
 
         # process rhs expr and bind to vars
-        rhs = self._processs_expr(node.value)
+        print("assigning to procecessed node value: ", node.value)
+        rhs = self._process_expr(node.value)
+        print(rhs)
         for el, var in zip(rhs, vars):
             match el:
                 case None:
@@ -269,7 +248,6 @@ class ASTCompiler(ast.NodeVisitor):
                     if self.verbose:
                         print(f"Bound constant {el} to input var {var}")
 
-    # TODO : test
     def visit_Call(self, node: ast.Call) -> cvec:
         """
         Either retrieves or compiles called fn, creates new fn node in caller graph, processes inputs and returns dummy outputs
@@ -302,7 +280,7 @@ class ASTCompiler(ast.NodeVisitor):
                     out_dim = registry[func_name].out_dim
                     inp_dim = registry[func_name].inp_dim
                 else:
-                    ValueError(
+                    raise ValueError(
                         f"Function {func_name} imported from stdlib but not found in registry"
                     )
 
@@ -315,9 +293,7 @@ class ASTCompiler(ast.NodeVisitor):
 
         # process arguments (must be Cvecs of dim 1)
         for i, arg in enumerate(node.args):
-            evald_arg = self._processs_expr(arg)
-            print("arg: ", arg)
-            print("evald arg: ", evald_arg)
+            evald_arg = self._process_expr(arg)
 
             assert (
                 len(evald_arg) == 1
@@ -331,7 +307,7 @@ class ASTCompiler(ast.NodeVisitor):
                     if (name not in self.funcs[self.curr_fn].inputs) and (
                         name not in self.funcs[self.curr_fn].vars
                     ):
-                        ValueError(f"Used undefined symbol {name}")
+                        raise ValueError(f"Used undefined symbol {name}")
 
                     self.funcs[self.curr_fn].graph.add_edge(name, res_name, in_idx=i)
 
@@ -353,16 +329,16 @@ class ASTCompiler(ast.NodeVisitor):
     def _process_statement(self, node: ast.AST) -> None:  # what is the type?
         match node:
             case ast.FunctionDef():
-                ValueError("Nested function declarations currently unsupported.")
+                raise ValueError("Nested function declarations currently unsupported.")
             case ast.Return():
                 self.visit_Return(node)
             case ast.Assign():
                 self.visit_Assign(node)
             case _:
-                ValueError("rest of process_statement unimplemented")
+                raise ValueError("rest of process_statement unimplemented")
         pass
 
-    def _processs_expr(self, node: ast.AST) -> cvec:
+    def _process_expr(self, node: ast.AST) -> cvec:
         match node:
             case ast.Constant():
                 return self.visit_Constant(node)
@@ -371,9 +347,12 @@ class ASTCompiler(ast.NodeVisitor):
             case ast.Name():
                 return cvec([node.id])
             case ast.BinOp():
-                ValueError("expr: binary operations not yet supported")
+                raise ValueError("expr: binary operations not yet supported")
+            case ast.BoolOp():
+                return self.visit_BoolOp(node)
+                raise ValueError("expr: boolean operations not yet supported")
 
-        ValueError("rest of expr unimplemented")
+        raise ValueError("rest of expr unimplemented")
 
     def visit_Constant(self, node: ast.Constant) -> cvec:
         match node.value:
@@ -385,7 +364,21 @@ class ASTCompiler(ast.NodeVisitor):
             case None:
                 return cvec([None])
             case _:
-                ValueError("constant: got invalid constant type")
+                raise ValueError("constant: got invalid constant type")
+
+    def visit_BoolOp(self, node: ast.BoolOp) -> cvec:
+        match node.op:
+            case ast.And():
+                func = ast.Attribute(value=ast.Name(id="std"), attr="std_and")
+                args = node.values
+                call = ast.Call(func=func, args=args)
+                return self._process_expr(call)
+            case _:
+                raise ValueError(
+                    f"Invalid boolean operation of type {type(node)} passed"
+                )
+
+        raise ValueError("rest of BoolOp not implemented")
 
     def uid_of_name(self, name: str) -> str:
         self.uid_ct += 1
@@ -411,5 +404,5 @@ class ASTCompiler(ast.NodeVisitor):
         for node in self.head.body:
             if isinstance(node, ast.FunctionDef) and node.name == name:
                 return node
-            else:
-                ValueError(f"Called undefined function {name}")
+
+        raise ValueError(f"Called undefined function {name}")

@@ -22,6 +22,9 @@ class ASTGenerator:
             pyast.Return,  # Return statement
             pyast.Call,  # Function call
             pyast.Load,
+            # Boolean operations
+            pyast.BoolOp,
+            pyast.And
         }
         ast: pyast.Module = None
 
