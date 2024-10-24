@@ -3,6 +3,7 @@
 import networkx as nx
 import matplotlib.pyplot as plt
 from _prnn.reservoir import Reservoir
+from typing import Any, Dict
 
 
 class CGraph:
@@ -154,6 +155,36 @@ class CGraph:
             in_idx = None  # Clear input_idx for non-reservoir targets
 
         self.graph.add_edge(source, target, output_idx=out_idx, input_idx=in_idx)
+
+    def update_var_name(self, old_name: str, new_name: str):
+        """
+        Updates the name of a variable node in the graph, preserving all edges and attributes.
+        """
+        if not self.graph.has_node(old_name):
+            raise ValueError(f"Node {old_name} does not exist.")
+        if not self.graph.has_node(new_name):
+            nx.relabel_nodes(self.graph, {old_name: new_name}, copy=False)
+            return
+
+        old_attrs = self.graph.nodes[old_name]
+        new_attrs = self.graph.nodes[new_name]
+
+        # Update new_attrs with old_attrs, giving precedence to old_attrs
+        merged_attrs: Dict[str, Any] = {**new_attrs, **old_attrs}
+        self.graph.nodes[new_name].update(merged_attrs)
+
+        # 2. Redirect all incoming edges to old_name to new_name
+        for predecessor in list(self.graph.predecessors(old_name)):
+            edge_data = self.graph.get_edge_data(predecessor, old_name)
+            self.graph.add_edge(predecessor, new_name, **edge_data)
+
+        # 3. Redirect all outgoing edges from old_name to new_name
+        for successor in list(self.graph.successors(old_name)):
+            edge_data = self.graph.get_edge_data(old_name, successor)
+            self.graph.add_edge(new_name, successor, **edge_data)
+
+        # 4. Remove the old node
+        self.graph.remove_node(old_name)
 
     def get_graph(self):
         """
