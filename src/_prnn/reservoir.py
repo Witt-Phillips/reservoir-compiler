@@ -190,7 +190,7 @@ class Reservoir:
         self.r = self.r + (k1 + (2 * k2) + 2 * (k3 + k4)) / 6
         return self.r
 
-    def run(self, inputs: np.ndarray = None, time=None, W=None, verbose=False):
+    def run(self, inputs: np.ndarray = None, time=None, W=None, verbose=False, ret_states=False):
         # user specified W case
         W = W if W is not None else self.W
         assert (
@@ -230,7 +230,7 @@ class Reservoir:
             self.propagate(inputs[:, i - 1, :])
             states[:, i] = self.r.flatten()
 
-        return W @ states
+        return W @ states if not ret_states else states
 
     """  
     Rsvr Files: pickles a reservoir and saves it to the src/presets dir

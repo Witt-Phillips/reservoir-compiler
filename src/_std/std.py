@@ -2,11 +2,13 @@ from typing import Any, Callable, Dict, TypeVar
 from functools import wraps
 from _prnn.reservoir import Reservoir
 
-class stdFnInfo():
+
+class stdFnInfo:
     def __init__(self, path: str, inp_dim: int, out_dim: int):
         self.path = path
         self.inp_dim = inp_dim
         self.out_dim = out_dim
+
 
 registry: Dict[str, stdFnInfo] = {}  # name -> stdFnInfo
 
@@ -38,6 +40,7 @@ def nand(x, y) -> Reservoir:
     """logical nand: .1 -> True and -.1 -> False"""
     pass
 
+
 @std_function("std_and", "and", inp_dim=2, out_dim=1)
 def std_and(x, y) -> Reservoir:
     """logical nand: .1 -> True and -.1 -> False"""
@@ -50,10 +53,17 @@ def fan(x) -> Reservoir:
     pass
 
 
+@std_function("nor2", "nor_double", inp_dim=2, out_dim=2)
+def nor2(x, y) -> Reservoir:
+    """logical nor: .1 -> True and -.1 -> False. Doubled output"""
+    pass
+
+
 @std_function("nor3", "nor_triple", inp_dim=2, out_dim=3)
 def nor3(x, y) -> Reservoir:
     """logical nor: .1 -> True and -.1 -> False. Tripled output"""
     pass
+
 
 @std_function("lorenz", "lorenz", inp_dim=0, out_dim=3)
 def lorenz(x, y) -> Reservoir:
