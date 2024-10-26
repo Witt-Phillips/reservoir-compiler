@@ -190,7 +190,14 @@ class Reservoir:
         self.r = self.r + (k1 + (2 * k2) + 2 * (k3 + k4)) / 6
         return self.r
 
-    def run(self, inputs: np.ndarray = None, time=None, W=None, verbose=False, ret_states=False):
+    def run(
+        self,
+        inputs: np.ndarray = None,
+        time=None,
+        W=None,
+        verbose=False,
+        ret_states=False,
+    ):
         # user specified W case
         W = W if W is not None else self.W
         assert (
@@ -209,6 +216,11 @@ class Reservoir:
                 np.sum(self.x_init == 0) == 1
             ), "error: input void input case, x must contain exactly one zero"
             inputs = np.zeros((1, time))
+        # ensure input dim matches res
+        else:
+            assert (
+                inputs.shape[0] == self.x_init.shape[0]
+            ), f"input dimension mismatch: passed {inputs.shape[0]} but expected {self.x_init.shape[0]}"
 
         # Ensure 4 dim inputs on z axis
         inputs = inputs.reshape(inputs.shape[0], inputs.shape[1], 1)

@@ -1,19 +1,9 @@
 from pyres import std
-def helper(x, y, z):
-    x, y, z = std.lorenz()
-    return x, y, z
+
+
+def helper(i1, i2):
+    return std.nand(i1 and i2, True)
+
 
 def main(i1, i2):
-    t = std.nand(i1, i2)
-    return t
-
-
-""" 
-New strategy:
-Use main as an entry point; if we reach a call to to a reservoir, we look it up. 
-If it's not in the lookup table, we search the AST for it's definiiton and compile it
-(meaning we also compile any uncompiled functions in it). 
-
-If we are not compiling main, then we should just add to the context. At that point,
-we can assume that all well-defined programs will have the compiled function info in its context.
- """
+    return 0.1 and helper(i1, i2)

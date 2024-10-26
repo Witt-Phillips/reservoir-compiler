@@ -9,5 +9,6 @@ if 1:
     # print(inp)
     # inp = high_low_inputs(4000)
     # inp = np.full((1, 4000), 0.5)
+    # outputs = res.run(inp)
     outputs = res.run(time=4000)
     plt_outputs(outputs, "", res.output_names)

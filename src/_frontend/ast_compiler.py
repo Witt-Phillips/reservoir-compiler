@@ -8,7 +8,6 @@ from _cgraph.resolve import Resolver
 from _std.std import registry
 
 from typing import Union
-from dataclasses import dataclass
 
 cvec = NewType("cvec", List[Union[float, str, None]])
 
@@ -95,6 +94,7 @@ class ASTCompiler(ast.NodeVisitor):
                             node["reservoir"] = Reservoir.load(registry[fn_name].path)
                             res = node["reservoir"]
                             res: Reservoir
+
                             # give placeholder names if none
                             if res.name == []:
                                 res.name = fn_name
@@ -128,9 +128,9 @@ class ASTCompiler(ast.NodeVisitor):
 
                     self.funcs[fn].res = Resolver(self.funcs[fn].graph).resolve()
 
-                    if self.verbose:
-                        print(f"reservoir resolved: {fn}")
-                        self.funcs[fn].res.print()
+                    # if self.verbose:
+                    #     print(f"reservoir resolved: {fn}")
+                    #     self.funcs[fn].res.print()
 
                     if self.track_time:
                         self._end_timer(f"resolve {fn}")
@@ -148,7 +148,7 @@ class ASTCompiler(ast.NodeVisitor):
             self._end_timer("global resolution loop")
 
         if "main" not in self.funcs:
-            raise ValueError("Couldn't find 'main' function")
+            self.throw(None, "Couldn't find 'main' function")
 
         res = self.funcs["main"].res
         assert res is not None, "compile: failed to compile reservoir"
@@ -201,8 +201,9 @@ class ASTCompiler(ast.NodeVisitor):
                     if self.verbose:
                         print(f"returning: {var}")
                 case _:
-                    raise ValueError(
-                        f"Pyres only supports returning variables. Attempted to return f{var}"
+                    self.throw(
+                        node,
+                        f"Pyres only supports returning variables. Attempted to return f{var}",
                     )
 
     def visit_Assign(self, node: ast.Assign) -> None:
@@ -218,10 +219,11 @@ class ASTCompiler(ast.NodeVisitor):
                         if isinstance(elt, ast.Name):
                             vars.append(elt.id)
 
-        # process rhs expr and bind to vars
-        print("assigning to procecessed node value: ", node.value)
         rhs = self._process_expr(node.value)
-        print(rhs)
+        # print(rhs)
+        # print(vars)
+        # print("in assign after expr processed, curr_fn is: ", self.curr_fn)
+
         for el, var in zip(rhs, vars):
             match el:
                 case None:
@@ -234,6 +236,9 @@ class ASTCompiler(ast.NodeVisitor):
                     # overwrite old var with new name
                     # if var not already forward declared, overwrite old var.
                     self.funcs[self.curr_fn].graph.update_var_name(el, var)
+                    # print("curr_fn: ", self.curr_fn)
+                    # print(f"bound existing var {el} to {var}")
+                    # self.funcs[self.curr_fn].graph.print()
 
                 case float():
                     # set var to float; treat as input
@@ -247,6 +252,7 @@ class ASTCompiler(ast.NodeVisitor):
 
                     if self.verbose:
                         print(f"Bound constant {el} to input var {var}")
+            self.funcs[self.curr_fn].vars.add(var)
 
     def visit_Call(self, node: ast.Call) -> cvec:
         """
@@ -280,10 +286,10 @@ class ASTCompiler(ast.NodeVisitor):
                     out_dim = registry[func_name].out_dim
                     inp_dim = registry[func_name].inp_dim
                 else:
-                    raise ValueError(
-                        f"Function {func_name} imported from stdlib but not found in registry"
+                    self.throw(
+                        node,
+                        f"Function {func_name} imported from stdlib but not found in registry",
                     )
-
         # Add reservoir node to graph
         if self.verbose:
             print(f"Calling function {func_name}")
@@ -307,8 +313,7 @@ class ASTCompiler(ast.NodeVisitor):
                     if (name not in self.funcs[self.curr_fn].inputs) and (
                         name not in self.funcs[self.curr_fn].vars
                     ):
-                        raise ValueError(f"Used undefined symbol {name}")
-
+                        self.throw(node, f"Used undefined symbol {name}")
                     self.funcs[self.curr_fn].graph.add_edge(name, res_name, in_idx=i)
 
                 case float():
@@ -322,20 +327,21 @@ class ASTCompiler(ast.NodeVisitor):
             out_name = self.uid_of_name(f"{func_name}_o")
             outputs.append(out_name)
             self.funcs[self.curr_fn].graph.add_var(out_name)
+            self.funcs[self.curr_fn].vars.add(out_name)
             self.funcs[self.curr_fn].graph.add_edge(res_name, out_name, out_idx=i)
-
         return outputs
 
     def _process_statement(self, node: ast.AST) -> None:  # what is the type?
         match node:
             case ast.FunctionDef():
-                raise ValueError("Nested function declarations currently unsupported.")
+                self.throw()
+                self.throw(node, "nested function declarations currently unsupported.")
             case ast.Return():
                 self.visit_Return(node)
             case ast.Assign():
                 self.visit_Assign(node)
             case _:
-                raise ValueError("rest of process_statement unimplemented")
+                self.throw(node, "rest of process_statement unimplemented")
         pass
 
     def _process_expr(self, node: ast.AST) -> cvec:
@@ -347,12 +353,11 @@ class ASTCompiler(ast.NodeVisitor):
             case ast.Name():
                 return cvec([node.id])
             case ast.BinOp():
-                raise ValueError("expr: binary operations not yet supported")
+                self.throw(node, "binary operations not yet supported")
             case ast.BoolOp():
                 return self.visit_BoolOp(node)
-                raise ValueError("expr: boolean operations not yet supported")
 
-        raise ValueError("rest of expr unimplemented")
+        self.throw(node, "rest of expr unimplemented")
 
     def visit_Constant(self, node: ast.Constant) -> cvec:
         match node.value:
@@ -364,7 +369,7 @@ class ASTCompiler(ast.NodeVisitor):
             case None:
                 return cvec([None])
             case _:
-                raise ValueError("constant: got invalid constant type")
+                self.throw(self, "constant: got invalid constant type")
 
     def visit_BoolOp(self, node: ast.BoolOp) -> cvec:
         match node.op:
@@ -374,11 +379,24 @@ class ASTCompiler(ast.NodeVisitor):
                 call = ast.Call(func=func, args=args)
                 return self._process_expr(call)
             case _:
-                raise ValueError(
-                    f"Invalid boolean operation of type {type(node)} passed"
+                self.throw(
+                    node,
+                    f"Invalid boolean operation of type '{type(node.op).__name__}' passed",
                 )
 
-        raise ValueError("rest of BoolOp not implemented")
+        self.throw(node, "rest of BoolOp not implemented")
+
+    def throw(self, node: ast.expr | ast.stmt, msg: str) -> None:
+        if not isinstance(node, (ast.expr, ast.stmt)):
+            print("didn't get valid subclass")
+            ln_rng = ""
+        else:
+            ln_rng = (
+                f"line {node.lineno}: "
+                if node.lineno == node.end_lineno
+                else f"between lines {node.lineno}-{node.end_lineno}: "
+            )
+        raise SyntaxError(f"PyRes: {ln_rng}{msg}")
 
     def uid_of_name(self, name: str) -> str:
         self.uid_ct += 1
@@ -405,4 +423,4 @@ class ASTCompiler(ast.NodeVisitor):
             if isinstance(node, ast.FunctionDef) and node.name == name:
                 return node
 
-        raise ValueError(f"Called undefined function {name}")
+        self.throw(None, f"Called undefined function {name}")
