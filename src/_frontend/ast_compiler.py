@@ -24,8 +24,9 @@ class FnInfo:
 
 
 class ASTCompiler(ast.NodeVisitor):
-    def __init__(self, verbose=False, track_time=False):
+    def __init__(self, verbose=False, track_time=False, file=None):
         self.uid_ct = 0
+        self.file = file
         self.funcs: dict[str, FnInfo] = {}
         self.head: ast.Module = None
         self.verbose: bool = verbose
@@ -396,7 +397,8 @@ class ASTCompiler(ast.NodeVisitor):
                 if node.lineno == node.end_lineno
                 else f"between lines {node.lineno}-{node.end_lineno}: "
             )
-        raise SyntaxError(f"PyRes: {ln_rng}{msg}")
+        file = f"{self.file}: " if self.file is not None else ""
+        raise SyntaxError(f"PyRes: {file}{ln_rng}{msg}")
 
     def uid_of_name(self, name: str) -> str:
         self.uid_ct += 1

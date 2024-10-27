@@ -24,7 +24,7 @@ class ASTGenerator:
             pyast.Load,
             # Boolean operations
             pyast.BoolOp,
-            pyast.And
+            pyast.And,
         }
         ast: pyast.Module = None
 
