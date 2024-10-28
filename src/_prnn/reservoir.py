@@ -47,12 +47,21 @@ class Reservoir:
         self.r_init: np.ndarray = (
             r_init if r_init is not None else np.zeros((A.shape[0], 1))
         )
+        #TODO: not specifying r doesn't work (symmetry?)
         self.r: np.ndarray = r if r is not None else np.zeros((A.shape[0], 1))
 
         assert isinstance(x_init, np.ndarray), "x_init must be an array"
         self.x_init: np.ndarray = x_init.reshape(-1, 1)
         self.global_timescale: float = global_timescale
         self.gamma: float = gamma
+
+        """ 
+         o = i1 and True ... takes and 'and' res and tweaks its d and removes an input from x/B. in __init__, pass e, d = calc_d() + e
+         #TODO: setting d directly will break things
+         self.e, self._d  = calcd() + self.e
+         self.update_d(e), or on self.e update
+          
+        """
 
         self.d = (
             d
@@ -65,6 +74,7 @@ class Reservoir:
                 else np.zeros((A.shape[0], 1))
             )
         )
+
         self.W: np.ndarray = W
 
         # for circuitry

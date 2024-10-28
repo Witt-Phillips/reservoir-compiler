@@ -332,7 +332,7 @@ class ASTCompiler(ast.NodeVisitor):
             self.funcs[self.curr_fn].graph.add_edge(res_name, out_name, out_idx=i)
         return outputs
 
-    def _process_statement(self, node: ast.AST) -> None:  # what is the type?
+    def _process_statement(self, node: ast.AST) -> None:
         match node:
             case ast.FunctionDef():
                 self.throw()
