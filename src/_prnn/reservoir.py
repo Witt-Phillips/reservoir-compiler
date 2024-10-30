@@ -1,8 +1,13 @@
 import os
 import pickle as pkl
 import numpy as np
-import sympy as sp
-import matlab.engine
+import scipy as sp
+# import sympy as sp
+import jax
+import jax.numpy as jnp
+import matplotlib.pyplot as plt
+
+jax.config.update("jax_enable_x64", True)
 
 """
 Reservoir Structure:
@@ -102,76 +107,56 @@ class Reservoir:
     """
 
     @staticmethod
-    def gen_baseRNN(latent_dim, input_dim, global_timescale=0.001, gamma=100):
+    def gen_baseRNN(eq, num_inputs, eq_pow, global_timescale=0.001, gamma=100):
+        # eq: python lambda function
+        # latent_dim: number of input variables in equations
+        # eq_pow: largest power of inputs in equations
+        
+        # Random seed
         np.random.seed(0)
+        rnga, rngb = jax.random.split(jax.random.PRNGKey(np.random.randint(1)),2)
+        
+        # Number of terms
+        n_terms = 0
+        for i in range(eq_pow+1):
+            n_terms += sp.special.comb(num_inputs + i - 1, num_inputs - 1)
+        latent_dim = int(n_terms*10)
+        
+        # Initialize x0, B, r0, d
+        x0 = jnp.array(np.zeros(num_inputs))
+        B = (jax.random.uniform(rnga,(latent_dim,num_inputs)) - 0.5)/50
+        r0 = jax.random.uniform(rnga,(latent_dim,1))-0.5
+        d = jnp.squeeze(np.arctanh(r0)) - (B @ x0)
+        
+        # Dynamical representational basis
+        f = lambda x: jnp.tanh(jnp.einsum('zi,i->z',B,x) + d)
+        DNP = f(x0)[:,jnp.newaxis]
+        for i in range(1,eq_pow+1):
+            f = jax.jacfwd(f)
+            DNP = jnp.concatenate((DNP,jnp.reshape(f(x0),[latent_dim,jnp.power(num_inputs,i)],'F')),axis=1)
+        
+        # Generate output matrix
+        O = jnp.array(eq(x0))[:,jnp.newaxis]
+        for i in range(1,eq_pow+1):
+            eq = jax.jacfwd(eq)
+            O = jnp.concatenate((O,jnp.reshape(jnp.array(eq(x0)),[len(O),jnp.power(num_inputs,i)],'F')),axis=1)
+        O = O/gamma + jnp.concatenate((jnp.zeros((num_inputs,1)),jnp.eye(num_inputs),jnp.zeros((num_inputs,O.shape[1]-1-num_inputs))),1)
+        
+            
+        print(O.shape)
+        print(DNP.shape)
+        # Solve
+        W,_,_,_ = jnp.linalg.lstsq(DNP.T, O.T)
+        
+        # Convert variables to numpy
         A = np.zeros((latent_dim, latent_dim))  # Adjacency matrix
-        B = (np.random.rand(latent_dim, input_dim) - 0.5) * 0.05  # Input weight matrix
-        r_init = np.random.rand(latent_dim, 1) - 0.5
-        x_init = np.zeros((input_dim, 1))
-        return Reservoir(A, B, r_init, x_init, global_timescale, gamma)
+        B = np.array(B)
+        r0 = np.array(r0)
+        x0 = np.array(x0)
+        W = np.array(W.T)
+        
+        return Reservoir(A, B, r0, x0[:,np.newaxis], global_timescale, gamma, d[:,np.newaxis], W)
 
-    @staticmethod
-    def solve(sym_eqs, verbose=False) -> "Reservoir":
-        """
-        Solves a system of equations using a baseRNN (Reservoir) of the correct size,
-        solves via call to Jason's code via MatLab Engine.
-
-        Args:
-            sym_eqs (list): A list of symbolic equations representing the system to solve.
-
-        Returns:
-            Reservoir: Reservoir solved for symeqs.
-
-        """
-
-        # determine number of baseRNN inputs -- init latents at 10x inputs
-        x = set()
-        for eq in sym_eqs:
-            for symbol in eq.rhs.free_symbols:
-                x.add(symbol)
-        num_x = len(x)
-
-        # TODO: determine correct number of latents (currently using 10x input space)
-        baseRNN = Reservoir.gen_baseRNN(num_x * 10, num_x)
-
-        print("Solving for reservoir. This may take a moment!")
-
-        # start and configure matlab engine
-        eng = matlab.engine.start_matlab()
-        if verbose:
-            print("* matlab engine started")
-        path = r"src/_prnn/matlab_dependencies"
-        eng.addpath(path, nargout=0)
-        eng.cd(path, nargout=0)
-        if verbose:
-            print("* added scripts to matlab path")
-
-        # convert to matlab format, run
-        A, B, r_init, x_init, global_timescale, gamma = baseRNN.py2mat()
-        matlab_eqs = [sp.octave_code(eq) for eq in sym_eqs]
-        A, B, r_init, x_init, d, O, R = eng.runMethod(
-            A,
-            B,
-            r_init,
-            x_init,
-            global_timescale,
-            gamma,
-            matlab_eqs,
-            verbose,
-            nargout=7,
-        )  # add nargout=0 if ignoring output
-
-        eng.quit()
-
-        # solve for W
-        O = np.array(O, dtype=float)
-        R = np.array(R, dtype=float)
-        W, _, _, _ = np.linalg.lstsq(R.T, O.T)
-        W = W.T
-
-        return Reservoir.mat2py(
-            A, B, r_init, x_init, baseRNN.global_timescale, baseRNN.gamma, d, W
-        )
 
     """
     Engine: run a network forward
@@ -330,16 +315,6 @@ class Reservoir:
         if self.W is not None:
             print("W: ", self.W.shape)
 
-    def py2mat(self):
-        # save reservoir to matlab readable format
-        A = matlab.double(self.A.tolist())
-        B = matlab.double(self.B.tolist())
-        r_init = matlab.double(self.r_init.tolist())
-        x_init = matlab.double(self.x_init.tolist())
-        global_timescale = matlab.double([self.global_timescale])
-        gamma = matlab.double([self.gamma])
-        return A, B, r_init, x_init, global_timescale, gamma
-
     @staticmethod
     def mat2py(
         A, B, r_init, x_init, global_timescale, gamma, d=None, W=None
@@ -359,3 +334,22 @@ class Reservoir:
             return ValueError(f"invalid output; cannot double")
         self.W = np.vstack((self.W, self.W[output_idx, :]))
         return self
+
+
+# Test: Lorenz attractor
+R = Reservoir(np.zeros((3,3)),np.zeros((3,2)),np.zeros((3,1)),np.zeros((2,1)))
+eqs = lambda x: [10*(x[1] - x[0]),
+                 x[0]*(1-x[2]) - x[1],
+                 x[0]*x[1] - 8*x[2]/3 - 8/3*27]
+R = R.gen_baseRNN(eqs,3,3)
+
+rL = np.zeros((R.A.shape[0],30000))
+R.r = R.r_init
+for i in range(rL.shape[1]):
+    xp = np.repeat(R.W@R.r,4,1)
+    rL[:,i:i+1] = R.propagate(xp)
+
+xL = R.W@rL
+ax = plt.figure().add_subplot(projection='3d')
+ax.plot(xL[0,:],xL[1,:],xL[2,:])
+print(np.linalg.norm(R.W))
