@@ -38,6 +38,7 @@ class Reservoir:
         gamma=100,
         d=None,
         W=None,
+        e=None,
         name=None,
         input_names=[],
         output_names=[],
@@ -52,7 +53,7 @@ class Reservoir:
         self.r_init: np.ndarray = (
             r_init if r_init is not None else np.zeros((A.shape[0], 1))
         )
-        #TODO: not specifying r doesn't work (symmetry?)
+        # TODO: not specifying r doesn't work (symmetry?)
         self.r: np.ndarray = r if r is not None else np.zeros((A.shape[0], 1))
 
         assert isinstance(x_init, np.ndarray), "x_init must be an array"
@@ -65,7 +66,6 @@ class Reservoir:
          #TODO: setting d directly will break things
          self.e, self._d  = calcd() + self.e
          self.update_d(e), or on self.e update
-          
         """
 
         self.d = (
@@ -79,6 +79,8 @@ class Reservoir:
                 else np.zeros((A.shape[0], 1))
             )
         )
+
+        self.e = np.zeros((A.shape[0], 1)) if e is None else e
 
         self.W: np.ndarray = W
 
@@ -97,6 +99,7 @@ class Reservoir:
             self.gamma,
             self.d,
             self.W,
+            e=self.e,
         )
         copied_res.usedOutputs = set(self.usedOutputs)  # Properly copy the set
         copied_res.usedInputs = set(self.usedInputs)  # Properly copy the set
@@ -166,7 +169,7 @@ class Reservoir:
         # Ensure r and x are column vectors
         r = r.reshape(-1, 1)
         x = x.reshape(-1, 1)
-        dr = self.gamma * (-r + np.tanh(self.A @ r + self.B @ x + self.d))
+        dr = self.gamma * (-r + np.tanh(self.A @ r + self.B @ x + self.d + self.e))
         return dr
 
     def propagate(self, x: np.ndarray):
@@ -296,6 +299,7 @@ class Reservoir:
         print("r_init:\n", np.round(self.r_init, precision))
         print("x_init:\n", np.round(self.x_init, precision))
         print("d:\n", np.round(self.d, precision))
+        print("e:\n", np.round(self.e, precision))
         print("r:\n", np.round(self.r, precision))
         print("global_timescale: ", np.round(self.global_timescale, precision))
         print("1/gamma: ", np.round(1 / self.gamma, precision))
@@ -309,6 +313,7 @@ class Reservoir:
         print("r_init: ", self.r_init.shape)
         print("x_init: ", self.x_init.shape)
         print("d: ", self.d.shape)
+        print("e: ", self.e.shape)
         print("r: ", self.r.shape)
         print("global_timescale: ", self.global_timescale)
         print("gamma: ", self.gamma)
