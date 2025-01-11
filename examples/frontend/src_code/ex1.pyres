@@ -1,9 +1,0 @@
-from pyres import std
-
-
-def helper(i1, i2):
-    return std.nand(i1 and i2, True)
-
-
-def main(i1, i2):
-    return 0.1 and helper(i1, i2)

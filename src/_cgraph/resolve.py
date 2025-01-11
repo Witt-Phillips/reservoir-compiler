@@ -159,7 +159,7 @@ class Resolver:
             x_all = np.vstack([x_all, res.x_init])
             r_init_all = np.vstack([r_init_all, res.r_init])
             d_all = np.vstack([d_all, res.d])
-            e_all = np.vstack([e_all, res.e])
+            # e_all = np.vstack([e_all, res.e])
 
             # Update input and output names
             for name in res.input_names:
@@ -217,8 +217,8 @@ class Resolver:
             node = self.graph.get_node(inp_name)
             if node["value"] is not None:
                 b_col = self.reservoir.B[:, idx].reshape(-1, 1)
-                self.reservoir.e += b_col * node["value"]
-                # REPLACED: self.reservoir.d += b_col * node["value"]
+                # self.reservoir.e += b_col * node["value"]
+                self.reservoir.d += b_col * node["value"]
                 self._remove_res_input(self.reservoir, idx)
 
     @staticmethod

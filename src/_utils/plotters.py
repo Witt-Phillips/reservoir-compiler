@@ -66,19 +66,21 @@ def plot_reservoir_matrices(reservoir, title_prefix="Reservoir Matrices"):
     plt.show()
 
 
-def in_out_split(inputs, outputs, title, input_names=None, output_names=None):
-    """2 plots; one with inputs, the other with outputs. Good for 2d"""
+def in_out_split(reservoir, inputs, outputs, title):
+    """2 plots; one with inputs, the other with outputs, using reservoir input/output names."""
     if inputs.shape[1] != outputs.shape[1]:
         raise ValueError("plot: inputs and outputs must have equal length.")
 
     time = np.arange(inputs.shape[1])
     plt.figure(figsize=(12, 8))
 
-    # signals
+    # Plot inputs
     plt.subplot(2, 1, 1)
     for i in range(inputs.shape[0]):
         label = (
-            input_names[i] if input_names and i < len(input_names) else f"Signal {i+1}"
+            reservoir.input_names[i]
+            if i < len(reservoir.input_names)
+            else f"Signal {i+1}"
         )
         plt.plot(time, inputs[i, :], label=label)
 
@@ -92,12 +94,12 @@ def in_out_split(inputs, outputs, title, input_names=None, output_names=None):
     plt.title(f"{title} - Input(s)")
     plt.legend()
 
-    # outputs
+    # Plot outputs
     plt.subplot(2, 1, 2)
     for j in range(outputs.shape[0]):
         label = (
-            output_names[j]
-            if output_names and j < len(output_names)
+            reservoir.output_names[j]
+            if j < len(reservoir.output_names)
             else f"Output {j+1}"
         )
         plt.plot(time, outputs[j, :], label=label)
@@ -116,18 +118,22 @@ def in_out_split(inputs, outputs, title, input_names=None, output_names=None):
     plt.show()
 
 
-def plt_outputs(outputs, title, output_names):
+def plt_outputs(reservoir, outputs, title):
     if outputs.shape[0] == 0:
         print("No outputs to plot")
         return
 
-    """Basic plotter designed for output portions"""
+    """Basic plotter designed for output portions, using reservoir output names as labels."""
     time = np.arange(outputs.shape[1])
     plt.figure(figsize=(12, 8))
 
-    # outputs only
+    # Plotting each output with labels from reservoir.output_names
     for j in range(outputs.shape[0]):
-        label = output_names[j] if j < len(output_names) else f"Output {j+1}"
+        label = (
+            reservoir.output_names[j]
+            if j < len(reservoir.output_names)
+            else f"Output {j+1}"
+        )
         plt.plot(time, outputs[j, :], label=label)
 
     # Adding a 10% margin to y-limits for outputs
@@ -137,19 +143,31 @@ def plt_outputs(outputs, title, output_names):
 
     plt.xlabel("Time")
     plt.ylabel("Output Value")
-    plt.title(f"{title}")
+    plt.title(title)
     plt.legend()
 
     plt.tight_layout()
     plt.show()
 
 
-def three_d(outputs, title):
+def three_d(reservoir, outputs, title, path=None):
     """3d plotter for dynam sys like Lorenz"""
     fig = plt.figure()
     ax = fig.add_subplot(111, projection="3d")
-    ax.plot(outputs[0, :], outputs[1, :], outputs[2, :])
+
+    # Plotting the outputs with labels from reservoir.output_names
+    ax.plot(
+        outputs[0, :],
+        outputs[1, :],
+        outputs[2, :],
+        label=", ".join(reservoir.output_names[:3]),
+    )
     ax.set_title(title)
+
+    # Adding legend
+    ax.legend()
+    if path:
+        plt.savefig(path + ".png", format="png", dpi=300)
     plt.show()
 
 

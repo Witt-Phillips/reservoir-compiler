@@ -1,0 +1,8 @@
+from pyres import std
+
+
+def main(set, reset):
+    r2 = None
+    q, r1 = std.fan(std.nand(set, r2))
+    qp, r2 = std.fan(std.nand(r1, reset))
+    return q, qp

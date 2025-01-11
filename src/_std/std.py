@@ -41,6 +41,12 @@ def nand(x, y) -> Reservoir:
     pass
 
 
+@std_function("nor", "nor", inp_dim=2, out_dim=1)
+def nor(x, y) -> Reservoir:
+    """logical nor"""
+    pass
+
+
 @std_function("std_and", "and", inp_dim=2, out_dim=1)
 def std_and(x, y) -> Reservoir:
     """logical nand: .1 -> True and -.1 -> False"""
@@ -49,19 +55,7 @@ def std_and(x, y) -> Reservoir:
 
 @std_function("fan", "fan", inp_dim=1, out_dim=2)
 def fan(x) -> Reservoir:
-    """fanout: o1 == o2 == x. TODO: broken!"""
-    pass
-
-
-@std_function("nor2", "nor_double", inp_dim=2, out_dim=2)
-def nor2(x, y) -> Reservoir:
-    """logical nor: .1 -> True and -.1 -> False. Doubled output"""
-    pass
-
-
-@std_function("nor3", "nor_triple", inp_dim=2, out_dim=3)
-def nor3(x, y) -> Reservoir:
-    """logical nor: .1 -> True and -.1 -> False. Tripled output"""
+    """fanout: o1 == o2 == x"""
     pass
 
 

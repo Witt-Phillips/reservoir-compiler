@@ -1,6 +1,0 @@
-from pyres import std
-
-
-def main(i1):
-    x = std.nand(i1, 0.1)
-    return x

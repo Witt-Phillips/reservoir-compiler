@@ -10,11 +10,11 @@ config.frame_rate = 30
 config.media_dir = "src/_utils/manim/examples/media"
 
 # Circuit configuration and generation.
-nand: Reservoir = Reservoir.load("nand")
+nand: Reservoir = Reservoir.load("nor")
 
 time = 4000
 inps = inputs.high_low_inputs(time)
-name = "Nand Gate"
+name = "NOR Gate"
 outputs = nand.run(inps)
 
 scene = CombinedInputOutputPlot(time, outputs, inps, name)

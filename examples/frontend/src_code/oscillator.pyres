@@ -1,0 +1,16 @@
+from pyres import std
+
+
+def tri_nor(i1, i2):
+    o1, t1 = std.fan(std.nor(i1, i2))
+    o2, o3 = std.fan(t1)
+    return o1, o2, o3
+
+
+def main():
+    n3o1 = None
+    n3o2 = None
+    n1o1, n1o2, n1go = tri_nor(n3o1, n3o2)
+    n2o1, n2o2, n2go = tri_nor(n1o1, n1o2)
+    n3o1, n3o2, n3go = tri_nor(n2o1, n2o2)
+    return n1go, n2go, n3go

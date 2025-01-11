@@ -1,14 +1,15 @@
 from pyres import compile
-from _utils.plotters import plt_outputs
-from _utils.inputs import high_low_inputs, high_low_inputs_3rows
+from _utils.plotters import plt_outputs, three_d, in_out_split
+from _utils.inputs import high_low_inputs
+import numpy as np
 
-res = compile("examples/frontend/src_code/ex1.pyres", verbose=True)
+path = "examples/frontend/src_code/internalize_c.pyres"
+R = compile(path, verbose=False)
+t = 10000
+# input = np.full((1, t), 0.1)
+# input = high_low_inputs(t)
+o = R.run(time=t)
 
-if 1:
-    # inp = high_low_inputs(4000)[0, :].reshape(1, -1)
-    # print(inp)
-    inp = high_low_inputs(4000)
-    # inp = np.full((1, 4000), 0.5)
-    # outputs = res.run(inp)
-    outputs = res.run(inp)
-    plt_outputs(outputs, "", res.output_names)
+plt_outputs(R, o, path)
+# three_d(R, o, path)
+# in_out_split(R, input, o, path)

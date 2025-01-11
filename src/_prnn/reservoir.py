@@ -1,7 +1,10 @@
 import os
 import pickle as pkl
 import numpy as np
-import scipy as sp
+import sympy as sp
+import scipy
+
+
 # import sympy as sp
 import jax
 import jax.numpy as jnp
@@ -110,56 +113,183 @@ class Reservoir:
     """
 
     @staticmethod
-    def gen_baseRNN(eq, num_inputs, eq_pow, global_timescale=0.001, gamma=100):
+    def solve(eqs, fold_recurrent_outputs=False, ic: np.ndarray = None):
+        # convert to non-evaluated sp eqs
+        sp_eqs: list[sp.Eq] = []
+        for lhs, rhs in eqs:
+            eq = sp.Eq(lhs, rhs, evaluate=False)
+            sp_eqs.append(eq)
+
+        # parse equations
+        recs = set()
+        lhs = []
+        rhs = []
+        max_pow = 0
+
+        for eq in sp_eqs:
+            if isinstance(eq.lhs, sp.Symbol) and eq.lhs not in lhs:
+                lhs.append(eq.lhs)  # Add it to lhs if it passes the check
+            else:
+                raise ValueError(f"Invalid or duplicate lhs: {eq.lhs}")
+
+            rhs_free = sorted(eq.rhs.free_symbols, key=lambda s: s.name)
+            for sym in rhs_free:
+                if sym not in rhs:
+                    rhs.append(sym)
+
+            poly = sp.Poly(eq.rhs) if eq.rhs.is_polynomial() else None
+            if poly:
+                max_pow = max(max_pow, poly.total_degree())
+
+        for sym in rhs:
+            if sym in lhs:
+                recs.add((lhs.index(sym), rhs.index(sym)))
+
+        # generate lambda
+        sorted_rhs = sorted(rhs, key=lambda sym: int(sym.name[1:]))
+        print(sorted_rhs)
+
+        f = sp.lambdify(sorted_rhs, [eq.rhs for eq in sp_eqs], "jax")
+        R = Reservoir.gen_baseRNN(lambda x: f(*x), len(rhs), max_pow + 1, recs)
+        R.input_names = [str(x) for x in rhs]
+        R.output_names = [str(x) for x in lhs]
+
+        # set ic
+        if ic is not None:
+            R.run(ic)
+
+        # handle feedback
+        if recs:
+            B = np.hstack([R.B[:, o].reshape(-1, 1) for o, _ in recs])
+            W = np.vstack([R.W[i, :].reshape(1, -1) for _, i in recs])
+
+            for ix in sorted({input_idx for input_idx, _ in recs}, reverse=True):
+                R.remove_res_input(ix)
+            for ox in sorted({output_idx for _, output_idx in recs}, reverse=True):
+                if fold_recurrent_outputs:
+                    R.remove_res_output(ox)
+
+            R.A = B @ W
+
+        print("Recs:\n", recs)
+        print("Outputs:\n", lhs)
+        print("Inputs:\n", rhs)
+        print(np.linalg.norm(R.W))
+        return R
+
+    @staticmethod
+    def gen_baseRNN(
+        eq,
+        num_inputs,
+        eq_pow,
+        recs,
+        global_timescale=0.001,
+        gamma=100,
+        verbose=False,
+        ic=None,
+    ):
         # eq: python lambda function
         # latent_dim: number of input variables in equations
         # eq_pow: largest power of inputs in equations
-        
+
         # Random seed
         np.random.seed(0)
-        rnga, rngb = jax.random.split(jax.random.PRNGKey(np.random.randint(1)),2)
-        
+        rnga, rngb = jax.random.split(jax.random.PRNGKey(np.random.randint(1)), 2)
+
         # Number of terms
         n_terms = 0
-        for i in range(eq_pow+1):
-            n_terms += sp.special.comb(num_inputs + i - 1, num_inputs - 1)
-        latent_dim = int(n_terms*10)
-        
+        for i in range(eq_pow + 1):
+            n_terms += scipy.special.comb(num_inputs + i - 1, num_inputs - 1)
+        latent_dim = int(n_terms * 10)
+
         # Initialize x0, B, r0, d
         x0 = jnp.array(np.zeros(num_inputs))
-        B = (jax.random.uniform(rnga,(latent_dim,num_inputs)) - 0.5)/50
-        r0 = jax.random.uniform(rnga,(latent_dim,1))-0.5
+        B = (jax.random.uniform(rnga, (latent_dim, num_inputs)) - 0.5) / 50
+        r0 = jax.random.uniform(rnga, (latent_dim, 1)) - 0.5
         d = jnp.squeeze(np.arctanh(r0)) - (B @ x0)
-        
+
         # Dynamical representational basis
-        f = lambda x: jnp.tanh(jnp.einsum('zi,i->z',B,x) + d)
-        DNP = f(x0)[:,jnp.newaxis]
-        for i in range(1,eq_pow+1):
+        f = lambda x: jnp.tanh(jnp.einsum("zi,i->z", B, x) + d)
+        DNP = f(x0)[:, jnp.newaxis]
+        for i in range(1, eq_pow + 1):
             f = jax.jacfwd(f)
-            DNP = jnp.concatenate((DNP,jnp.reshape(f(x0),[latent_dim,jnp.power(num_inputs,i)],'F')),axis=1)
-        
+            DNP = jnp.concatenate(
+                (DNP, jnp.reshape(f(x0), [latent_dim, jnp.power(num_inputs, i)], "F")),
+                axis=1,
+            )
+
         # Generate output matrix
-        O = jnp.array(eq(x0))[:,jnp.newaxis]
-        for i in range(1,eq_pow+1):
+        O = jnp.array(eq(x0))[:, jnp.newaxis]
+        for i in range(1, eq_pow + 1):
             eq = jax.jacfwd(eq)
-            O = jnp.concatenate((O,jnp.reshape(jnp.array(eq(x0)),[len(O),jnp.power(num_inputs,i)],'F')),axis=1)
-        O = O/gamma + jnp.concatenate((jnp.zeros((num_inputs,1)),jnp.eye(num_inputs),jnp.zeros((num_inputs,O.shape[1]-1-num_inputs))),1)
-        
-            
-        print(O.shape)
-        print(DNP.shape)
+            O = jnp.concatenate(
+                (
+                    O,
+                    jnp.reshape(
+                        jnp.array(eq(x0)), [len(O), jnp.power(num_inputs, i)], "F"
+                    ),
+                ),
+                axis=1,
+            )
+
+        O = O / gamma + jnp.concatenate(
+            (
+                jnp.zeros((num_inputs, 1)),
+                jnp.eye(num_inputs),
+                jnp.zeros((num_inputs, O.shape[1] - 1 - num_inputs)),
+            ),
+            1,
+        )
+
+        # NEW O: puts 1s at place of recurrence. But how do we know the input order?
+
+        # if recs:
+        #     rows = jnp.array([row for row, _ in recs])
+        #     cols = jnp.array([col + 1 for _, col in recs])
+        #     U = jnp.zeros_like(O).at[rows, cols].set(1)
+        #     O = O / gamma + U
+        # else:
+        #     O = O / gamma
+
+        np.set_printoptions(linewidth=200)
+        # print("First 8 cols of Rossler O:\n", O[:, 0:12])
         # Solve
-        W,_,_,_ = jnp.linalg.lstsq(DNP.T, O.T)
-        
+        W, _, _, _ = jnp.linalg.lstsq(DNP.T, O.T)
+
         # Convert variables to numpy
         A = np.zeros((latent_dim, latent_dim))  # Adjacency matrix
         B = np.array(B)
         r0 = np.array(r0)
         x0 = np.array(x0)
         W = np.array(W.T)
-        
-        return Reservoir(A, B, r0, x0[:,np.newaxis], global_timescale, gamma, d[:,np.newaxis], W)
 
+        R = Reservoir(
+            A, B, r0, x0[:, np.newaxis], global_timescale, gamma, d[:, np.newaxis], W
+        )
+
+        # if verbose:
+        #     print(f"Solved reservoir! \n {R.printDims()}")
+
+        return R
+
+    def remove_res_input(self, idx: int):
+        if self.B.shape[1] > 1:
+            self.B = np.delete(self.B, idx, axis=1)
+            self.x_init = np.delete(self.x_init, idx, axis=0)
+        else:
+            self.B = np.zeros_like(self.B)
+            self.x_init = np.zeros((1, self.x_init.shape[1]))
+
+        del self.input_names[idx]
+
+    def remove_res_output(self, idx: int):
+        self.W = (
+            np.delete(self.W, idx, axis=0)
+            if self.W.shape[0] > 1
+            else np.zeros((0, self.A.shape[0]))
+        )
+
+        del self.output_names[idx]
 
     """
     Engine: run a network forward
@@ -169,7 +299,7 @@ class Reservoir:
         # Ensure r and x are column vectors
         r = r.reshape(-1, 1)
         x = x.reshape(-1, 1)
-        dr = self.gamma * (-r + np.tanh(self.A @ r + self.B @ x + self.d + self.e))
+        dr = self.gamma * (-r + np.tanh(self.A @ r + self.B @ x + self.d))
         return dr
 
     def propagate(self, x: np.ndarray):
@@ -341,20 +471,22 @@ class Reservoir:
         return self
 
 
-# Test: Lorenz attractor
-R = Reservoir(np.zeros((3,3)),np.zeros((3,2)),np.zeros((3,1)),np.zeros((2,1)))
-eqs = lambda x: [10*(x[1] - x[0]),
-                 x[0]*(1-x[2]) - x[1],
-                 x[0]*x[1] - 8*x[2]/3 - 8/3*27]
-R = R.gen_baseRNN(eqs,3,3)
+""" # Test: Lorenz attractor
+R = Reservoir(np.zeros((3, 3)), np.zeros((3, 2)), np.zeros((3, 1)), np.zeros((2, 1)))
+eqs = lambda x: [
+    10 * (x[1] - x[0]),
+    x[0] * (1 - x[2]) - x[1],
+    x[0] * x[1] - 8 * x[2] / 3 - 8 / 3 * 27,
+]
+R = R.gen_baseRNN(eqs, 3, 3)
 
-rL = np.zeros((R.A.shape[0],30000))
+rL = np.zeros((R.A.shape[0], 30000))
 R.r = R.r_init
 for i in range(rL.shape[1]):
-    xp = np.repeat(R.W@R.r,4,1)
-    rL[:,i:i+1] = R.propagate(xp)
+    xp = np.repeat(R.W @ R.r, 4, 1)
+    rL[:, i : i + 1] = R.propagate(xp)
 
-xL = R.W@rL
-ax = plt.figure().add_subplot(projection='3d')
-ax.plot(xL[0,:],xL[1,:],xL[2,:])
-print(np.linalg.norm(R.W))
+xL = R.W @ rL
+ax = plt.figure().add_subplot(projection="3d")
+ax.plot(xL[0, :], xL[1, :], xL[2, :])
+print(np.linalg.norm(R.W)) """
