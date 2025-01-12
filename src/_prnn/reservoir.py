@@ -113,7 +113,7 @@ class Reservoir:
     """
 
     @staticmethod
-    def solve(eqs, fold_recurrent_outputs=False, ic: np.ndarray = None):
+    def solve(eqs, fold_recurrent_outputs=False, ic: np.ndarray = None, verbose=False):
         # convert to non-evaluated sp eqs
         sp_eqs: list[sp.Eq] = []
         for lhs, rhs in eqs:
@@ -127,14 +127,6 @@ class Reservoir:
         lhs = []
         rhs = []
         max_pow = 0
-
-        """ 
-         The way that we track recurrence can be much more efficient.
-
-         * We should simply gather all the outputs, then flag which outputs are actually recurrent inputs.
-         * From there, we just add 1s to the index of that o.
-          
-            """
 
         for eq in sp_eqs:
             if isinstance(eq.lhs, sp.Symbol) and eq.lhs not in lhs:
@@ -181,10 +173,12 @@ class Reservoir:
 
             R.A = B @ W
 
-        print("Recs:\n", recs)
-        print("Outputs:\n", lhs)
-        print("Inputs:\n", rhs)
-        print(np.linalg.norm(R.W))
+        if verbose:
+            print("Recs:\n", recs)
+            print("Outputs:\n", lhs)
+            print("Inputs:\n", rhs)
+            print(np.linalg.norm(R.W))
+
         return R
 
     @staticmethod
@@ -262,7 +256,7 @@ class Reservoir:
             O = O / gamma
 
         np.set_printoptions(linewidth=200)
-        # print("First 8 cols of Rossler O:\n", O[:, 0:12])
+
         # Solve
         W, _, _, _ = jnp.linalg.lstsq(DNP.T, O.T)
 
@@ -276,10 +270,7 @@ class Reservoir:
         R = Reservoir(
             A, B, r0, x0[:, np.newaxis], global_timescale, gamma, d[:, np.newaxis], W
         )
-
-        # if verbose:
-        #     print(f"Solved reservoir! \n {R.printDims()}")
-
+        
         return R
 
     def remove_res_input(self, idx: int):

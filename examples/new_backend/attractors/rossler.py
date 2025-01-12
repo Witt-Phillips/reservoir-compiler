@@ -1,5 +1,3 @@
-# TODO: not working for some reason? may be input space issue?
-
 from pyres import Reservoir
 import numpy as np
 import sympy as sp
