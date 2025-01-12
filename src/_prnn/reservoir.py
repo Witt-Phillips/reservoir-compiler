@@ -117,7 +117,9 @@ class Reservoir:
         # convert to non-evaluated sp eqs
         sp_eqs: list[sp.Eq] = []
         for lhs, rhs in eqs:
-            eq = sp.Eq(lhs, rhs, evaluate=False)
+            zero_term = sp.Mul(0, lhs, evaluate=False)
+            expanded_rhs = sp.Add(zero_term, rhs, evaluate=False)
+            eq = sp.Eq(lhs, expanded_rhs, evaluate=False)
             sp_eqs.append(eq)
 
         # parse equations
@@ -125,6 +127,14 @@ class Reservoir:
         lhs = []
         rhs = []
         max_pow = 0
+
+        """ 
+         The way that we track recurrence can be much more efficient.
+
+         * We should simply gather all the outputs, then flag which outputs are actually recurrent inputs.
+         * From there, we just add 1s to the index of that o.
+          
+            """
 
         for eq in sp_eqs:
             if isinstance(eq.lhs, sp.Symbol) and eq.lhs not in lhs:
@@ -232,24 +242,24 @@ class Reservoir:
                 axis=1,
             )
 
-        O = O / gamma + jnp.concatenate(
-            (
-                jnp.zeros((num_inputs, 1)),
-                jnp.eye(num_inputs),
-                jnp.zeros((num_inputs, O.shape[1] - 1 - num_inputs)),
-            ),
-            1,
-        )
+        # O = O / gamma + jnp.concatenate(
+        #     (
+        #         jnp.zeros((num_inputs, 1)),
+        #         jnp.eye(num_inputs),
+        #         jnp.zeros((num_inputs, O.shape[1] - 1 - num_inputs)),
+        #     ),
+        #     1,
+        # )
 
         # NEW O: puts 1s at place of recurrence. But how do we know the input order?
 
-        # if recs:
-        #     rows = jnp.array([row for row, _ in recs])
-        #     cols = jnp.array([col + 1 for _, col in recs])
-        #     U = jnp.zeros_like(O).at[rows, cols].set(1)
-        #     O = O / gamma + U
-        # else:
-        #     O = O / gamma
+        if recs:
+            rows = jnp.array([row for row, _ in recs])
+            cols = jnp.array([col + 1 for _, col in recs])
+            U = jnp.zeros_like(O).at[rows, cols].set(1)
+            O = O / gamma + U
+        else:
+            O = O / gamma
 
         np.set_printoptions(linewidth=200)
         # print("First 8 cols of Rossler O:\n", O[:, 0:12])
